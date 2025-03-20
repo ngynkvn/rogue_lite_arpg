@@ -15,7 +15,7 @@ use crate::{
         *,
     },
     labels::layer::ZLayer,
-    player::{systems::*, Player, PlayerStats},
+    player::{systems::*, Player},
     progression::GameProgress,
 };
 
@@ -32,7 +32,7 @@ pub fn spawn_player(
         spawn_offhand(&mut commands, &sprites, "tome_of_healing"),
     ];
 
-    let current_player_base_stats = PlayerStats::from(game_progress.base_stats);
+    let current_player_base_stats = game_progress.base_stats;
     let player = commands
         .spawn((
             Player,

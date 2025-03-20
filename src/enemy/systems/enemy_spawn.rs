@@ -95,8 +95,8 @@ fn spawn_enemy(
             },
         );
 
-        let weapon = spawn_mainhand_weapon(commands, &sprites, &atlases, &enemy_details.weapon);
-        let health_potion = spawn_health_potion(commands, &sprites);
+        let weapon = spawn_mainhand_weapon(commands, sprites, atlases, &enemy_details.weapon);
+        let health_potion = spawn_health_potion(commands, sprites);
         let starting_items = [weapon, health_potion];
 
         let enemy = commands
