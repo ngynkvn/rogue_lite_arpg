@@ -4,6 +4,7 @@ use bevy::ecs::schedule::SystemSchedule;
 use bevy::ecs::{intern::Interned, schedule::ScheduleLabel, schedule::Schedules};
 use bevy::prelude::*;
 use bevy::reflect::DynamicTypePath;
+use disqualified::ShortName;
 
 #[derive(ScheduleLabel, Clone, Debug, PartialEq, Eq, Hash)]
 struct ScheduleDebugGroup;
@@ -39,12 +40,9 @@ impl Plugin for DebugPlugin {
                 let system_sets: Vec<_> = graph.system_sets().collect();
                 for (set_id, system_set, condition) in system_sets {
                     info!(
-                        "{:?}, {:?}, {:?}",
+                        "{:?}, {:?}",
                         set_id,
-                        system_set,
-                        system_set
-                            .system_type()
-                            .map(|t| t.reflect_short_type_path().to_string())
+                        ShortName::from(format!("{:?}", system_set).as_str()),
                     );
                 }
             });

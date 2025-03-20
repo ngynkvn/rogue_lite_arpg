@@ -379,6 +379,7 @@ dependencies = [
  "bevy_ecs_tilemap",
  "bevy_mod_debugdump",
  "console_error_panic_hook",
+ "disqualified",
  "egui_extras",
  "egui_plot",
  "ldtk_rust",
