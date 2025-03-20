@@ -1,6 +1,6 @@
 // In a new file, e.g., src/lib.rs or src/plugins.rs
 use bevy::prelude::*;
-use bevy_ecs_tilemap::prelude::*;
+use bevy_ecs_tilemap::TilemapPlugin;
 
 pub struct GamePlugins;
 

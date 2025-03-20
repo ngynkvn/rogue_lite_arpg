@@ -1,5 +1,4 @@
 use bevy::prelude::*;
-use bevy_asset_loader::loading_state::LoadingStateSet;
 
 use crate::labels::{
     sets::{InGameSet, MainSet},
@@ -15,9 +14,7 @@ impl Plugin for SchedulePlugin {
             (
                 MainSet::InGame.run_if(in_state(AppState::Playing)),
                 MainSet::Menu.run_if(in_state(AppState::Paused)),
-            )
-                .chain()
-                .after(LoadingStateSet(AppState::AssetLoading)), // appease the system ordering gods
+            ),
         )
         // Configuring the ordering of our gameplay loop using these main sets:
         // Despawn Entitites -> Handle Input -> Simulation -> Update HUD / overlay UI -> Physics -> Collision

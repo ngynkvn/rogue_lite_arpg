@@ -9,7 +9,6 @@ wasm-opt = false
 [dependencies]
 bevy = { version = "0.15.0", features = ["dynamic_linking"] }
 bevy_ecs_tilemap = "0.15.0"
-bevy_asset_loader = { version = "0.22.0", features = ["2d"] }
 accesskit = "0.17"
 avian2d = "0.2.0"
 rand = "0.8"
@@ -44,10 +43,12 @@ name = "baba_yaga_bin" # for local build stuff
 path = "src/main.rs"
 
 [features]
+default = ["new_asset_loader"]
 atlas = []
 debug = []
 trace = ["bevy/trace_tracy", "bevy/trace"]
 debugdump = ["dep:bevy_mod_debugdump"]
+new_asset_loader = []
 
 # Enable a small amount of optimization in the dev profile.
 [profile.dev]
