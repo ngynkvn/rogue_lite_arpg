@@ -1,7 +1,6 @@
 // Module declarations - keep these at the top
 pub mod ai;
 pub mod animation;
-pub mod assets;
 pub mod combat;
 pub mod configuration;
 pub mod despawn;
