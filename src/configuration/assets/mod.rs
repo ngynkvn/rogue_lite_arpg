@@ -2,7 +2,9 @@ use crate::labels::states::AppState;
 use bevy::prelude::*;
 
 mod asset_barrier;
-use asset_barrier::AssetBarrier;
+pub use asset_barrier::AssetBarrier;
+pub mod asset_group;
+pub use asset_group::AssetGroup;
 
 pub struct AssetLoadingPlugin;
 

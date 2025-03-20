@@ -367,6 +367,7 @@ version = "0.1.0"
 dependencies = [
  "accesskit",
  "avian2d",
+ "baba_yaga_derive",
  "bevy",
  "bevy-inspector-egui",
  "bevy_ecs_tilemap",
@@ -383,6 +384,14 @@ dependencies = [
  "thiserror",
  "tiled",
  "wasm-bindgen",
+]
+
+[[package]]
+name = "baba_yaga_derive"
+version = "0.1.0"
+dependencies = [
+ "quote",
+ "syn",
 ]
 
 [[package]]
