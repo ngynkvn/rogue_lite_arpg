@@ -55,9 +55,9 @@ path = "src/main.rs"
 
 [features]
 atlas = []
-debug = ["dep:bevy-inspector-egui", "dep:egui_plot", "dep:egui_extras"]
+debug = []
 trace = ["bevy/trace_tracy", "bevy/trace"]
-dump = ["dep:bevy_mod_debugdump"]
+debugdump = ["dep:bevy_mod_debugdump"]
 
 # Enable a small amount of optimization in the dev profile.
 [profile.dev]

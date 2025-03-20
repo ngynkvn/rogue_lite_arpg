@@ -1,222 +1,122 @@
-use crate::map::systems::zone::ZoneBackground;
-use bevy::{
-    diagnostic::{
-        Diagnostic, DiagnosticPath, Diagnostics, DiagnosticsStore, FrameTimeDiagnosticsPlugin,
-        RegisterDiagnostic,
-    },
-    ecs::entity::Entities,
-    input::common_conditions::input_toggle_active,
-    prelude::*,
-    render::diagnostic::RenderDiagnosticsPlugin,
-    window::PrimaryWindow,
-};
-use bevy_ecs_tilemap::map::TilemapId;
-use bevy_inspector_egui::{
-    bevy_egui::{EguiContext, EguiPlugin},
-    bevy_inspector::hierarchy::{Hierarchy, SelectedEntities},
-    egui::{self, Color32, RichText},
-    DefaultInspectorConfigPlugin,
-};
-use egui_extras::Column;
-use egui_plot::{Line, Plot, PlotBounds, PlotPoint, Text};
-const ENTITY_COUNT: DiagnosticPath = EntityDiagnosticsPlugin::ENTITY_COUNT;
+use std::any::{Any, TypeId};
+
+use bevy::ecs::schedule::SystemSchedule;
+use bevy::ecs::{intern::Interned, schedule::ScheduleLabel, schedule::Schedules};
+use bevy::prelude::*;
+use bevy::reflect::DynamicTypePath;
+
+#[derive(ScheduleLabel, Clone, Debug, PartialEq, Eq, Hash)]
+struct ScheduleDebugGroup;
 
 pub struct DebugPlugin;
 
 impl Plugin for DebugPlugin {
     fn build(&self, app: &mut App) {
-        app.add_plugins((
-            EguiPlugin,
-            (
-                // Diagnostics Plugin Group
-                DefaultInspectorConfigPlugin,
-                FrameTimeDiagnosticsPlugin,
-                EntityDiagnosticsPlugin,
-                RenderDiagnosticsPlugin,
-            ),
-        ))
-        .add_systems(
-            Update,
-            (
-                inspector_ui.run_if(input_toggle_active(true, KeyCode::Backquote)),
-                diagnostics_ui,
-            )
-                .chain(),
-        );
+        let schedule_name = "Update";
+        let label = find_schedule(app, schedule_name).unwrap();
+        app.world_mut()
+            .resource_scope::<Schedules, _>(|world, mut schedules| {
+                let ignored_ambiguities = schedules.ignored_scheduling_ambiguities.clone();
+                let label_name = format!("{:?}", label);
+                let schedule = schedules
+                    .get_mut(label)
+                    .ok_or_else(|| format!("schedule {label_name} doesn't exist"))
+                    .unwrap();
+                schedule.graph_mut().initialize(world);
+
+                // build_schedule caches a topological sort of the dependency graph in
+                // schedule_graph
+                let _: SystemSchedule = schedule
+                    .graph_mut()
+                    .build_schedule(
+                        world.components(),
+                        ScheduleDebugGroup.intern(),
+                        &ignored_ambiguities,
+                    )
+                    .unwrap();
+
+                let graph = schedule.graph();
+                let system_sets: Vec<_> = graph.system_sets().collect();
+                for (set_id, system_set, condition) in system_sets {
+                    info!(
+                        "{:?}, {:?}, {:?}",
+                        set_id,
+                        system_set,
+                        system_set
+                            .system_type()
+                            .map(|t| t.reflect_short_type_path().to_string())
+                    );
+                }
+            });
     }
 }
 
-fn inspector_ui(world: &mut World, mut selected_entities: Local<SelectedEntities>) {
-    #[cfg(feature = "trace")]
-    let _span = info_span!("debug/ui", name = "inspector_ui").entered();
-    let Ok(egui_context) = world
-        .query_filtered::<&mut EguiContext, With<PrimaryWindow>>()
-        .get_single(world)
-    else {
-        return;
-    };
-    let mut egui_context = egui_context.clone();
-
-    egui::SidePanel::left("hierarchy")
-        .default_width(200.0)
-        .show(egui_context.get_mut(), |ui| {
-            egui::ScrollArea::both().show(ui, |ui| {
-                #[cfg(feature = "trace")]
-                let _span = info_span!("debug/ui", name = "hierarchy_panel").entered();
-
-                ui.heading("Hierarchy");
-                let type_registry = world.resource::<AppTypeRegistry>().clone();
-                let type_registry = type_registry.read();
-                Hierarchy {
-                    world,
-                    type_registry: &type_registry,
-                    selected: &mut selected_entities,
-                    context_menu: None,
-                    shortcircuit_entity: None,
-                    extra_state: &mut (),
-                }
-                .show::<(Without<TilemapId>, Without<ZoneBackground>)>(ui);
-
-                ui.label("Press `~` to toggle UI");
-                ui.allocate_space(ui.available_size());
-            });
-        });
-
-    egui::SidePanel::right("inspector")
-        .default_width(250.0)
-        .show(egui_context.get_mut(), |ui| {
-            egui::ScrollArea::both().show(ui, |ui| {
-                #[cfg(feature = "trace")]
-                let _span = info_span!("debug/ui", name = "inspector_panel").entered();
-
-                ui.heading("Inspector");
-                match selected_entities.as_slice() {
-                    &[entity] => {
-                        bevy_inspector_egui::bevy_inspector::ui_for_entity(world, entity, ui);
-                    }
-                    entities => {
-                        bevy_inspector_egui::bevy_inspector::ui_for_entities_shared_components(
-                            world, entities, ui,
-                        );
-                    }
-                }
-
-                ui.allocate_space(ui.available_size());
-            });
-        });
+trait SystemSetExt {
+    fn _exists(&self);
+}
+impl SystemSetExt for &dyn SystemSet {
+    fn _exists(&self) {}
 }
 
-fn diagnostics_ui(
-    egui_context: Single<&mut EguiContext, With<PrimaryWindow>>,
-    diagnostics: Res<DiagnosticsStore>,
-) {
-    #[cfg(feature = "trace")]
-    let _span = info_span!("debug/ui", name = "diagnostics_ui").entered();
+/// Looks up a schedule by its string name in `App`.
+fn find_schedule(
+    app: &App,
+    schedule_name: &str,
+) -> Result<Interned<dyn ScheduleLabel>, FindScheduleError> {
+    let lower_schedule_name = schedule_name.to_lowercase();
 
-    let mut egui_context = egui_context.clone();
+    let schedules = app.world().resource::<Schedules>();
+    let schedules = schedules
+        .iter()
+        // Note we get the Interned label from `schedule` since `&dyn ScheduleLabel` doesn't `impl
+        // ScheduleLabel`.
+        .map(|(label, schedule)| (format!("{label:?}").to_lowercase(), schedule.label()))
+        .collect::<Vec<_>>();
 
-    egui::Window::new("Diagnostics")
-        .default_size((256., 128.))
-        .show(egui_context.get_mut(), |ui| {
-            ui_plot(ui, &diagnostics);
-            // Entity Count
-            let entity_count = diagnostics
-                .get_measurement(&ENTITY_COUNT)
-                .map(|d| d.value)
-                .unwrap_or_default();
-            ui.label(format!("# entities = {:}", entity_count));
-
-            // Diagnostics Table
-            ui_diagnostics_table(ui, diagnostics);
-
-            ui.allocate_space(ui.available_size())
-        });
-}
-
-fn ui_diagnostics_table(ui: &mut egui::Ui, diagnostics: Res<DiagnosticsStore>) {
-    #[cfg(feature = "trace")]
-    let _span = info_span!("debug/ui", name = "ui_diagnostics_table").entered();
-    egui_extras::TableBuilder::new(ui)
-        .id_salt("diagnostics_table")
-        .resizable(true)
-        .striped(true)
-        .column(Column::auto())
-        .column(Column::remainder())
-        .header(12., |mut h| {
-            h.col(|ui| {
-                ui.label("Path");
-            });
-            h.col(|ui| {
-                ui.label("Value(avg)");
-            });
-        })
-        .body(|mut body| {
-            for d in diagnostics.iter() {
-                body.row(32., |mut row| {
-                    row.col(|ui| {
-                        ui.label(d.path().as_str());
-                    });
-                    row.col(|ui| {
-                        ui.label(format!("{:0.2}", d.average().unwrap_or_default()));
-                    });
-                });
+    let mut found_label = None;
+    for (str, label) in schedules.iter() {
+        if str == &lower_schedule_name {
+            if found_label.is_some() {
+                return Err(FindScheduleError::MoreThanOneMatch(
+                    schedule_name.to_string(),
+                ));
             }
-        });
-}
-
-fn ui_plot(ui: &mut egui::Ui, diagnostics: &Res<'_, DiagnosticsStore>) {
-    #[cfg(feature = "trace")]
-    let _span = info_span!("debug/ui", name = "ui_plot").entered();
-    let plot = Plot::new("fps")
-        .width(128.)
-        .view_aspect(2.)
-        .y_axis_label("fps")
-        .show_axes([false, false]);
-
-    // FPS counter + Plot
-    plot.show(ui, |plt_ui| {
-        let diagnostic = diagnostics.get(&FrameTimeDiagnosticsPlugin::FPS);
-        if let Some(fps) = diagnostic {
-            render_fps_graph(plt_ui, fps);
+            found_label = Some(*label);
         }
-    });
+    }
+    found_label.ok_or(FindScheduleError::NoMatch(
+        schedule_name.to_string(),
+        schedules.into_iter().map(|(str, _)| str).collect(),
+    ))
+}
+impl std::error::Error for FindScheduleError {}
+
+enum FindScheduleError {
+    /// There was no match. Holds the requested schedule, and the list of valid
+    /// schedules by string.
+    NoMatch(String, Vec<String>),
+    MoreThanOneMatch(String),
 }
 
-fn render_fps_graph(plt_ui: &mut egui_plot::PlotUi, fps: &Diagnostic) {
-    let _span = info_span!("debug/ui", name = "render_fps_graph").entered();
-    let values: Vec<[f64; 2]> = fps
-        .values()
-        .enumerate()
-        .map(|(i, &v)| [i as f64, v])
-        .collect();
-    plt_ui.set_plot_bounds(PlotBounds::from_min_max(
-        // TODO: hardcoded values
-        [0., 0.],
-        [fps.get_max_history_length() as f64, 120.],
-    ));
-    plt_ui.line(Line::new(values).fill(0.));
-
-    let avg_value = fps.average().unwrap_or_default();
-    plt_ui.text(Text::new(
-        // TODO: proper alignment
-        PlotPoint::new(24., 24.),
-        RichText::new(format!("{avg_value:0.0}"))
-            .size(16.)
-            .color(Color32::WHITE),
-    ));
-}
-
-pub struct EntityDiagnosticsPlugin;
-impl EntityDiagnosticsPlugin {
-    pub const ENTITY_COUNT: DiagnosticPath = DiagnosticPath::const_new("entity_count");
-
-    pub fn diagnostic_system(mut diagnostics: Diagnostics, entities: &Entities) {
-        diagnostics.add_measurement(&Self::ENTITY_COUNT, || entities.len() as f64);
+impl std::fmt::Debug for FindScheduleError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::NoMatch(request, schedules) => {
+                f.write_fmt(format_args!("No schedules matched the requested schedule '{request}'. The valid schedules are:\n"))?;
+                for schedule in schedules {
+                    f.write_fmt(format_args!("\n{schedule}"))?;
+                }
+                Ok(())
+            }
+            Self::MoreThanOneMatch(request) => f.write_fmt(format_args!(
+                "More than one schedule matched requested schedule '{request}'"
+            )),
+        }
     }
 }
-impl Plugin for EntityDiagnosticsPlugin {
-    fn build(&self, app: &mut App) {
-        app.register_diagnostic(Diagnostic::new(Self::ENTITY_COUNT))
-            .add_systems(Update, Self::diagnostic_system);
+
+impl std::fmt::Display for FindScheduleError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        <Self as std::fmt::Debug>::fmt(self, f)
     }
 }
