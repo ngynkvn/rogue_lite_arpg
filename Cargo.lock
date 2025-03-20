@@ -377,6 +377,7 @@ dependencies = [
  "bevy-inspector-egui",
  "bevy_asset_loader",
  "bevy_ecs_tilemap",
+ "bevy_mod_debugdump",
  "console_error_panic_hook",
  "egui_extras",
  "egui_plot",
@@ -1063,6 +1064,23 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "226f663401069ded4352ed1472a85bb1f43e2b7305d6a50e53a4f6508168e380"
 dependencies = [
  "glam",
+]
+
+[[package]]
+name = "bevy_mod_debugdump"
+version = "0.12.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "88939cddb937b5214ed749745cb7166d26055d7fce944efca651ff6f7fb09d5e"
+dependencies = [
+ "bevy_app",
+ "bevy_color",
+ "bevy_ecs",
+ "bevy_render",
+ "bevy_utils",
+ "lexopt",
+ "once_cell",
+ "petgraph",
+ "pretty-type-name",
 ]
 
 [[package]]
@@ -2912,6 +2930,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "lexopt"
+version = "0.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "baff4b617f7df3d896f97fe922b64817f6cd9a756bb81d40f8883f2f66dcb401"
+
+[[package]]
 name = "libc"
 version = "0.2.170"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3884,6 +3908,12 @@ name = "presser"
 version = "0.3.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e8cf8e6a8aa66ce33f63993ffc4ea4271eb5b0530a9002db8455ea6050c77bfa"
+
+[[package]]
+name = "pretty-type-name"
+version = "1.0.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f0f73cdaf19b52e6143685c3606206e114a4dfa969d6b14ec3894c88eb38bd4b"
 
 [[package]]
 name = "prettyplease"
