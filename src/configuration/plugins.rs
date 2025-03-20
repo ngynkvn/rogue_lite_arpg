@@ -45,7 +45,9 @@ impl Plugin for GamePlugins {
                 NPCPlugin,
             ))
             // UI
-            .add_plugins(UIPlugin);
+            .add_plugins(UIPlugin)
+            .allow_ambiguous_component::<Node>()
+            .allow_ambiguous_component::<Transform>();
     }
 }
 
