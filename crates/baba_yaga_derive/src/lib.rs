@@ -48,7 +48,7 @@ fn impl_asset_group(ast: &syn::DeriveInput) -> TokenStream {
         let field_name = &asset.field_name;
         let src_path = &asset.src_path;
         quote! {
-            #field_name: server.load_acquire(#src_path, guard.clone())
+            #field_name: server.load(#src_path)
         }
     });
 
@@ -59,9 +59,6 @@ fn impl_asset_group(ast: &syn::DeriveInput) -> TokenStream {
             }
 
             fn load_assets_system(mut commands: ::bevy::ecs::system::Commands, server: ::bevy::ecs::system::Res<::bevy::asset::AssetServer>) {
-                let guard = baba_yaga::configuration::assets::AssetBarrier::new();
-                commands.insert_resource(guard.clone());
-
                 let #name = #name {
                     #(#field_assignments,)*
                 };

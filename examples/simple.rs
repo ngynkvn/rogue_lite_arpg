@@ -3,7 +3,7 @@ use baba_yaga::configuration::assets::AssetGroup;
 use baba_yaga_derive::AssetGroup;
 use bevy::{asset::Handle, image::Image, prelude::Resource};
 
-#[derive(AssetGroup, Resource)]
+#[derive(Resource, AssetGroup)]
 pub struct GameIcons {
     #[asset(src = "icons/equip_marker.png")]
     equip_icon: Handle<Image>,

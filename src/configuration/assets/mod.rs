@@ -13,8 +13,11 @@ impl Plugin for AssetLoadingPlugin {
         app.add_systems(OnEnter(AppState::AssetLoading), load_assets_system)
             .add_systems(
                 Update,
-                exit_asset_loading
-                    .run_if(in_state(AppState::AssetLoading).and(AssetBarrier::assets_ready)),
+                exit_asset_loading.run_if(
+                    in_state(AppState::AssetLoading)
+                        .and(AssetBarrier::<()>::assets_ready)
+                        .and(run_once),
+                ),
             )
             .init_resource::<SpriteAssets>()
             .init_resource::<SpriteSheetLayouts>()
@@ -26,7 +29,7 @@ fn exit_asset_loading(mut app_state: ResMut<NextState<AppState>>) {
 }
 
 fn load_assets_system(mut commands: Commands, server: Res<AssetServer>) {
-    let guard = AssetBarrier::new();
+    let guard = AssetBarrier::<()>::new();
     commands.insert_resource(guard.clone());
 
     let game_icons = GameIcons {
