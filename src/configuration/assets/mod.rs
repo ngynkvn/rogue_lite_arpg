@@ -1,8 +1,6 @@
 use crate::labels::states::AppState;
-use bevy::prelude::*;
+use bevy::{asset::LoadState, prelude::*, utils::dbg};
 
-mod asset_barrier;
-pub use asset_barrier::AssetBarrier;
 pub mod asset_group;
 pub use asset_group::AssetGroup;
 
@@ -13,65 +11,108 @@ impl Plugin for AssetLoadingPlugin {
         app.add_systems(OnEnter(AppState::AssetLoading), load_assets_system)
             .add_systems(
                 Update,
-                exit_asset_loading.run_if(
-                    in_state(AppState::AssetLoading)
-                        .and(AssetBarrier::<()>::assets_ready)
-                        .and(run_once),
-                ),
+                poll_handle_state.run_if(resource_exists::<LoadingAssets>),
             )
             .init_resource::<SpriteAssets>()
             .init_resource::<SpriteSheetLayouts>()
             .init_resource::<GameIcons>();
     }
 }
-fn exit_asset_loading(mut app_state: ResMut<NextState<AppState>>) {
-    app_state.set(AppState::SpawnPlayer);
+
+#[derive(Resource, Clone, Debug, Deref, DerefMut, Default)]
+pub struct LoadingAssets(Vec<UntypedHandle>);
+
+fn poll_handle_state(
+    mut commands: Commands,
+    mut state: ResMut<NextState<AppState>>,
+    asset_server: Res<AssetServer>,
+    handles: Res<LoadingAssets>,
+) {
+    let all_loaded = handles
+        .iter()
+        .flat_map(|h| asset_server.get_load_state(h))
+        .all(|s| s.is_loaded());
+    if all_loaded {
+        state.set(AppState::SpawnPlayer);
+        commands.remove_resource::<LoadingAssets>();
+    }
 }
 
 fn load_assets_system(mut commands: Commands, server: Res<AssetServer>) {
-    let guard = AssetBarrier::<()>::new();
-    commands.insert_resource(guard.clone());
-
     let game_icons = GameIcons {
-        equip_icon: server.load_acquire("icons/equip_marker.png", guard.clone()),
-        potion_icon: server.load_acquire("icons/potion.png", guard.clone()),
-        spell_book_icon: server.load_acquire("icons/spell-book.png", guard.clone()),
-        melee_icon: server.load_acquire("icons/sword-brandish.png", guard.clone()),
-        staff_icon: server.load_acquire("icons/wizard-staff.png", guard.clone()),
+        equip_icon: server.load("icons/equip_marker.png"),
+        potion_icon: server.load("icons/potion.png"),
+        spell_book_icon: server.load("icons/spell-book.png"),
+        melee_icon: server.load("icons/sword-brandish.png"),
+        staff_icon: server.load("icons/wizard-staff.png"),
     };
+    let mut ids: LoadingAssets = LoadingAssets::default();
+    ids.push(game_icons.equip_icon.clone().untyped());
+    ids.push(game_icons.potion_icon.clone().untyped());
+    ids.push(game_icons.spell_book_icon.clone().untyped());
+    ids.push(game_icons.melee_icon.clone().untyped());
+    ids.push(game_icons.staff_icon.clone().untyped());
     commands.insert_resource(game_icons);
 
     let sprite_assets = SpriteAssets {
-        gold_coin: server.load_acquire("coin.png", guard.clone()),
-        tome_of_healing: server.load_acquire("items/tome_of_healing.png", guard.clone()),
-        sword: server.load_acquire("items/sword.png", guard.clone()),
-        axe: server.load_acquire("items/axe.png", guard.clone()),
-        fire_staff: server.load_acquire("items/fire_staff.png", guard.clone()),
-        ice_staff: server.load_acquire("items/ice_staff.png", guard.clone()),
-        health_potion: server.load_acquire("items/health_potion.png", guard.clone()),
-        ice_bolt: server.load_acquire("projectiles/IceBolt.png", guard.clone()),
-        fire_ball: server.load_acquire("projectiles/fireball.png", guard.clone()),
-        exit_door: server.load_acquire("door.png", guard.clone()),
-        ground_tiles: server.load_acquire("tilesets/ground_tiles.png", guard.clone()),
-        grass_tiles: server.load_acquire("tilesets/grass_tiles.png", guard.clone()),
-        water_tiles: server.load_acquire("tilesets/water_tiles.png", guard.clone()),
-        wall_tiles: server.load_acquire("tilesets/wall_tiles.png", guard.clone()),
-        wood_tiles: server.load_acquire("tilesets/wood_tiles.png", guard.clone()),
-        cobblestone_tiles: server.load_acquire("tilesets/cobblestone_tiles.png", guard.clone()),
-        run_start_door: server.load_acquire("door.png", guard.clone()),
-        chests_sprite_sheet: server.load_acquire("chests.png", guard.clone()),
-        tome_of_healing_effect_sprite_sheet: server
-            .load_acquire("spells/tome_of_healing_effect.png", guard.clone()),
-        player_sprite_sheet: server.load_acquire("player/player_sprite_sheet.png", guard.clone()),
-        ice_mage_enemy_sprite_sheet: server
-            .load_acquire("enemies/ice_mage_enemy.png", guard.clone()),
-        warrior_enemy_sprite_sheet: server.load_acquire("enemies/warrior_enemy.png", guard.clone()),
-        fire_mage_enemy_sprite_sheet: server
-            .load_acquire("enemies/fire_mage_enemy.png", guard.clone()),
-        shop_keeper_sprite_sheet: server.load_acquire("npcs/shop_keeper.png", guard.clone()),
-        game_guide_sprite_sheet: server.load_acquire("npcs/game_guide.png", guard.clone()),
-        stat_trainer_sprite_sheet: server.load_acquire("npcs/stat_trainer.png", guard.clone()),
+        gold_coin: server.load("coin.png"),
+        tome_of_healing: server.load("items/tome_of_healing.png"),
+        sword: server.load("items/sword.png"),
+        axe: server.load("items/axe.png"),
+        fire_staff: server.load("items/fire_staff.png"),
+        ice_staff: server.load("items/ice_staff.png"),
+        health_potion: server.load("items/health_potion.png"),
+        ice_bolt: server.load("projectiles/IceBolt.png"),
+        fire_ball: server.load("projectiles/fireball.png"),
+        exit_door: server.load("door.png"),
+        ground_tiles: server.load("tilesets/ground_tiles.png"),
+        grass_tiles: server.load("tilesets/grass_tiles.png"),
+        water_tiles: server.load("tilesets/water_tiles.png"),
+        wall_tiles: server.load("tilesets/wall_tiles.png"),
+        wood_tiles: server.load("tilesets/wood_tiles.png"),
+        cobblestone_tiles: server.load("tilesets/cobblestone_tiles.png"),
+        run_start_door: server.load("door.png"),
+        chests_sprite_sheet: server.load("chests.png"),
+        tome_of_healing_effect_sprite_sheet: server.load("spells/tome_of_healing_effect.png"),
+        player_sprite_sheet: server.load("player/player_sprite_sheet.png"),
+        ice_mage_enemy_sprite_sheet: server.load("enemies/ice_mage_enemy.png"),
+        warrior_enemy_sprite_sheet: server.load("enemies/warrior_enemy.png"),
+        fire_mage_enemy_sprite_sheet: server.load("enemies/fire_mage_enemy.png"),
+        shop_keeper_sprite_sheet: server.load("npcs/shop_keeper.png"),
+        game_guide_sprite_sheet: server.load("npcs/game_guide.png"),
+        stat_trainer_sprite_sheet: server.load("npcs/stat_trainer.png"),
     };
+    ids.push(sprite_assets.gold_coin.clone().untyped());
+    ids.push(sprite_assets.tome_of_healing.clone().untyped());
+    ids.push(sprite_assets.sword.clone().untyped());
+    ids.push(sprite_assets.axe.clone().untyped());
+    ids.push(sprite_assets.fire_staff.clone().untyped());
+    ids.push(sprite_assets.ice_staff.clone().untyped());
+    ids.push(sprite_assets.health_potion.clone().untyped());
+    ids.push(sprite_assets.ice_bolt.clone().untyped());
+    ids.push(sprite_assets.fire_ball.clone().untyped());
+    ids.push(sprite_assets.exit_door.clone().untyped());
+    ids.push(sprite_assets.ground_tiles.clone().untyped());
+    ids.push(sprite_assets.grass_tiles.clone().untyped());
+    ids.push(sprite_assets.water_tiles.clone().untyped());
+    ids.push(sprite_assets.wall_tiles.clone().untyped());
+    ids.push(sprite_assets.wood_tiles.clone().untyped());
+    ids.push(sprite_assets.cobblestone_tiles.clone().untyped());
+    ids.push(sprite_assets.run_start_door.clone().untyped());
+    ids.push(sprite_assets.chests_sprite_sheet.clone().untyped());
+    ids.push(
+        sprite_assets
+            .tome_of_healing_effect_sprite_sheet
+            .clone()
+            .untyped(),
+    );
+    ids.push(sprite_assets.player_sprite_sheet.clone().untyped());
+    ids.push(sprite_assets.ice_mage_enemy_sprite_sheet.clone().untyped());
+    ids.push(sprite_assets.warrior_enemy_sprite_sheet.clone().untyped());
+    ids.push(sprite_assets.fire_mage_enemy_sprite_sheet.clone().untyped());
+    ids.push(sprite_assets.shop_keeper_sprite_sheet.clone().untyped());
+    ids.push(sprite_assets.game_guide_sprite_sheet.clone().untyped());
+    ids.push(sprite_assets.stat_trainer_sprite_sheet.clone().untyped());
     commands.insert_resource(sprite_assets);
 
     let player_atlas_layout = TextureAtlasLayout::from_grid(UVec2::splat(64), 13, 21, None, None);
@@ -98,6 +139,7 @@ fn load_assets_system(mut commands: Commands, server: Res<AssetServer>) {
         tome_of_healing_effect: server.add(tome_of_healing_effect),
     };
     commands.insert_resource(sprite_sheet_layouts);
+    commands.insert_resource(ids);
 }
 
 #[derive(Resource, Default)]
