@@ -13,7 +13,7 @@ pub fn update_lootable_items(
         let rotation_angle = (item.drop_rotation_timer / 6.0) * 2.0 * PI;
         transform.rotation = Quat::from_rotation_z(rotation_angle);
         item.drop_glow_effect += time.delta_secs() * 2.0;
-        let glow_intensity = (item.drop_glow_effect.sin() * 0.1 + 0.7) as f32;
+        let glow_intensity = item.drop_glow_effect.sin() * 0.1 + 0.7;
         let base_color = sprite.color.to_srgba();
         sprite.color = Color::srgba(
             base_color.red * glow_intensity + 0.3,
