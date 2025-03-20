@@ -9,12 +9,14 @@ fn main() {
         {
             bevy_mod_debugdump::CommandLineArgs
         },
+        #[cfg(feature = "debug")]
+        {
+            baba_yaga::debug::DebugPlugin
+        },
     ));
 
-    #[cfg(feature = "debug")]
+    #[cfg(not(feature = "debug"))]
     {
-        baba_yaga::debug::DebugPlugin.build(&mut app);
-        return;
+        app.run();
     }
-    app.run();
 }

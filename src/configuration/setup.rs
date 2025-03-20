@@ -14,7 +14,7 @@ pub struct SetupPlugin;
 
 impl Plugin for SetupPlugin {
     fn build(&self, app: &mut App) {
-        #[cfg(all(debug_assertions))]
+        #[cfg(debug_assertions)]
         app.add_plugins(DebugPlugin);
 
         #[cfg(not(debug_assertions))]
@@ -44,6 +44,7 @@ fn setup_camera(mut commands: Commands) {
     commands.spawn(Camera2d);
 }
 
+#[allow(dead_code)]
 fn get_release_window_plugin() -> WindowPlugin {
     #[cfg(target_arch = "wasm32")]
     {

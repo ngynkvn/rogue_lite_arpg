@@ -1,5 +1,5 @@
 use bevy::prelude::*;
-use std::collections::VecDeque;
+use std::{cmp::Ordering, collections::VecDeque};
 
 use crate::items::equipment::EquipmentSlot;
 
@@ -103,10 +103,10 @@ impl Inventory {
         // all equipment indicies shift
         // TODO - add this for offhand
         if let Some(mainhand) = self.mainhand_index {
-            if index_to_remove < mainhand {
-                self.mainhand_index = Some(mainhand - 1);
-            } else if index_to_remove == mainhand {
-                self.mainhand_index = None;
+            match index_to_remove.cmp(&mainhand) {
+                Ordering::Less => self.mainhand_index = Some(mainhand - 1),
+                Ordering::Equal => self.mainhand_index = None,
+                Ordering::Greater => {}
             }
         }
 

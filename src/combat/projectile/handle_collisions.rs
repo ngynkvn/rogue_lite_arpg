@@ -26,7 +26,6 @@ pub fn handle_projectile_collisions(
             }
             // despawn projectile and ignore further collisions after ANY collision
             commands.entity(projectile_entity).despawn_recursive();
-            return;
         }
     }
 }
