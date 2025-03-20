@@ -1,8 +1,8 @@
-use std::sync::Arc;
-
+use crate::labels::states::AppState;
 use bevy::prelude::*;
 
-use crate::labels::states::AppState;
+mod asset_barrier;
+use asset_barrier::AssetBarrier;
 
 pub struct AssetLoadingPlugin;
 
@@ -11,7 +11,8 @@ impl Plugin for AssetLoadingPlugin {
         app.add_systems(OnEnter(AppState::AssetLoading), load_assets_system)
             .add_systems(
                 Update,
-                exit_asset_loading.run_if(in_state(AppState::AssetLoading).and(assets_ready)),
+                exit_asset_loading
+                    .run_if(in_state(AppState::AssetLoading).and(AssetBarrier::assets_ready)),
             )
             .init_resource::<SpriteAssets>()
             .init_resource::<SpriteSheetLayouts>()
@@ -21,12 +22,10 @@ impl Plugin for AssetLoadingPlugin {
 fn exit_asset_loading(mut app_state: ResMut<NextState<AppState>>) {
     app_state.set(AppState::SpawnPlayer);
 }
-fn assets_ready(guard: Option<Res<AssetBarrier>>) -> bool {
-    guard.map(|g| Arc::strong_count(&g)) == Some(1)
-}
 
 fn load_assets_system(mut commands: Commands, server: Res<AssetServer>) {
-    let guard = AssetBarrier(Arc::new(()));
+    let guard = AssetBarrier::new();
+    commands.insert_resource(guard.clone());
 
     let game_icons = GameIcons {
         equip_icon: server.load_acquire("icons/equip_marker.png", guard.clone()),
@@ -94,11 +93,9 @@ fn load_assets_system(mut commands: Commands, server: Res<AssetServer>) {
         tome_of_healing_effect: server.add(tome_of_healing_effect),
     };
     commands.insert_resource(sprite_sheet_layouts);
-
-    commands.insert_resource(guard);
 }
 
-#[derive(Resource, Default, Reflect)]
+#[derive(Resource, Default)]
 pub struct SpriteSheetLayouts {
     pub player_atlas_layout: Handle<TextureAtlasLayout>,
     pub enemy_atlas_layout: Handle<TextureAtlasLayout>,
@@ -109,7 +106,7 @@ pub struct SpriteSheetLayouts {
     pub tome_of_healing_effect: Handle<TextureAtlasLayout>,
 }
 
-#[derive(Resource, Default, Reflect)]
+#[derive(Resource, Default)]
 pub struct GameIcons {
     pub equip_icon: Handle<Image>,
     pub potion_icon: Handle<Image>,
@@ -118,7 +115,7 @@ pub struct GameIcons {
     pub staff_icon: Handle<Image>,
 }
 
-#[derive(Resource, Default, Reflect)]
+#[derive(Resource, Default)]
 pub struct SpriteAssets {
     pub gold_coin: Handle<Image>,
     pub tome_of_healing: Handle<Image>,
@@ -146,13 +143,4 @@ pub struct SpriteAssets {
     pub shop_keeper_sprite_sheet: Handle<Image>,
     pub game_guide_sprite_sheet: Handle<Image>,
     pub stat_trainer_sprite_sheet: Handle<Image>,
-}
-
-#[derive(Resource, Default, Deref)]
-pub struct AssetBarrier(Arc<()>);
-impl AssetBarrier {
-    /// Create an [`AssetBarrier`] with a [`AssetBarrierGuard`].
-    pub fn new() -> AssetBarrier {
-        AssetBarrier(Arc::new(()))
-    }
 }
