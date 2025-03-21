@@ -1,12 +1,26 @@
 [package]
 name = "baba_yaga"
 version = "0.1.0"
-edition = "2021"
+edition = "2024"
 
-[package.metadata.wasm-pack.profile.release]
-wasm-opt = false
+[[bin]]
+name = "baba_yaga_bin" # for local build stuff
+path = "src/main.rs"
 
-[dependencies]
+[lib]
+name = "baba_yaga"              # for wasm stuff
+crate-type = ["cdylib", "rlib"]
+
+[features]
+atlas = []
+debug = ["dep:bevy-inspector-egui", "dep:egui_plot", "dep:egui_extras"]
+trace = ["bevy/trace_tracy", "bevy/trace"]
+
+[workspace]
+members = ["crates/weba_yaga"]
+resolver = "3"
+
+[workspace.dependencies]
 bevy = { version = "0.15.3", features = ["dynamic_linking"] }
 bevy_ecs_tilemap = "0.15.0"
 bevy_asset_loader = { version = "0.22.0", features = ["2d"] }
@@ -21,38 +35,51 @@ log = { version = "*", features = [
 ] }
 serde = "1.0.219"
 noise = "0.9"
+console_error_panic_hook = "0.1.7"
 wasm-bindgen = "0.2"
 web-sys = { version = "0.3.77", features = [
   "Document",
   "HtmlCanvasElement",
   "Window",
 ] }
-console_error_panic_hook = "0.1.7"
+
+
+[dependencies]
+bevy = { workspace = true, features = ["dynamic_linking"] }
+bevy_ecs_tilemap = { workspace = true }
+bevy_asset_loader = { workspace = true, features = ["2d"] }
+accesskit = { workspace = true }
+avian2d = { workspace = true }
+tiled = { workspace = true }
+serde_json = { workspace = true }
+rand = { workspace = true }
+serde = { workspace = true }
+noise = { workspace = true }
+log = { workspace = true, features = [
+  "max_level_debug",
+  "release_max_level_warn",
+] }
 bevy-inspector-egui = { version = "0.30.0", optional = true }
 egui_plot = { version = "0.31.0", optional = true }
 egui_extras = { version = "0.31.1", optional = true }
 
 
-[lib]
-name = "baba_yaga"              # for wasm stuff
-crate-type = ["cdylib", "rlib"]
-
-[[bin]]
-name = "baba_yaga_bin" # for local build stuff
-path = "src/main.rs"
-
-[features]
-atlas = []
-debug = ["dep:bevy-inspector-egui", "dep:egui_plot", "dep:egui_extras"]
-trace = ["bevy/trace_tracy", "bevy/trace"]
-
-# Enable a small amount of optimization in the dev profile.
 [profile.dev]
+# Enable a small amount of optimization in the dev profile.
 opt-level = 0
-
-[profile.dev.build-override]
-opt-level = 3
-
 # Enable a large amount of optimization in the dev profile for dependencies.
-[profile.dev.package."*"]
-opt-level = 3
+package."*" = { opt-level = 3 }
+build-override = { opt-level = 3 }
+
+
+[target.wasm32.dependencies]
+web-sys = { workspace = true, features = [
+  "Document",
+  "HtmlCanvasElement",
+  "Window",
+] }
+wasm-bindgen = { workspace = true }
+console_error_panic_hook = { workspace = true }
+
+[package.metadata.wasm-pack.profile.release]
+wasm-opt = false

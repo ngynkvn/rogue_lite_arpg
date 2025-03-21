@@ -1,0 +1,8 @@
+[package]
+name = "weba_yaga"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+baba_yaga = { path = "../../" }
+bevy = { workspace = true }
