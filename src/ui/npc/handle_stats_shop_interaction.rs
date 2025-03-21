@@ -88,8 +88,8 @@ pub fn handle_stats_shop_ui_update(
     mut game_progress: ResMut<GameProgress>,
 ) {
     //Set Game Progress to current player stats
-    let player_stats = player_stats_query.clone();
-    game_progress.base_stats = player_stats.clone();
+    let player_stats = **player_stats_query;
+    game_progress.base_stats = player_stats;
 
     // Despawn existing menu
     for entity in stats_menu_query.iter() {

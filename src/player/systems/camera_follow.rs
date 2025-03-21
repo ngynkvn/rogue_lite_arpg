@@ -1,6 +1,6 @@
 use bevy::color::palettes::css::BLUE;
 use bevy::color::palettes::tailwind::PURPLE_700;
-use bevy::color::palettes::{basic::RED, css::ORANGE};
+use bevy::color::palettes::basic::RED;
 use bevy::prelude::*;
 
 use crate::{ai::state::AimPosition, player::components::Player};

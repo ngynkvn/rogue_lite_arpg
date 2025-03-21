@@ -83,8 +83,7 @@ impl Inventory {
 
     pub fn get_equipped(&self, slot: EquipmentSlot) -> Option<Entity> {
         self.get_equipped_slot(slot)
-            .map(|i| self.items.get(i).cloned())
-            .flatten()
+            .and_then(|i| self.items.get(i).cloned())
     }
 
     pub fn add_coins(&mut self, amount: u32) {
@@ -140,6 +139,12 @@ pub struct InventoryBuilder {
     items: Vec<Entity>,
     coins: u32,
     display_case: Option<Entity>,
+}
+
+impl Default for InventoryBuilder {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl InventoryBuilder {

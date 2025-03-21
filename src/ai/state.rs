@@ -55,12 +55,10 @@ pub fn update_state_on_simple_motion_change(
         //Defeated and Attacking state take priority over walking / idle
         if *action_state == ActionState::Attacking || *action_state == ActionState::Defeated {
             continue;
+        } else if motion.is_moving() {
+            action_state.set_if_neq(ActionState::Movement);
         } else {
-            if motion.is_moving() {
-                action_state.set_if_neq(ActionState::Movement);
-            } else {
-                action_state.set_if_neq(ActionState::Idle);
-            }
+            action_state.set_if_neq(ActionState::Idle);
         }
     }
 }
