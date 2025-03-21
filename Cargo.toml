@@ -7,7 +7,7 @@ edition = "2021"
 wasm-opt = false
 
 [dependencies]
-bevy = { version = "0.15.0", features = ["dynamic_linking"] }
+bevy = { version = "0.15.3", features = ["dynamic_linking"] }
 bevy_ecs_tilemap = "0.15.0"
 bevy_asset_loader = { version = "0.22.0", features = ["2d"] }
 accesskit = "0.17.1"
@@ -19,15 +19,15 @@ log = { version = "*", features = [
   "max_level_debug",
   "release_max_level_warn",
 ] }
-serde = "1.0.217"
+serde = "1.0.219"
 noise = "0.9"
 wasm-bindgen = "0.2"
-web-sys = { version = "0.3", features = [
+web-sys = { version = "0.3.77", features = [
   "Document",
   "HtmlCanvasElement",
   "Window",
 ] }
-console_error_panic_hook = "0.1"
+console_error_panic_hook = "0.1.7"
 bevy-inspector-egui = { version = "0.30.0", optional = true }
 egui_plot = { version = "0.31.0", optional = true }
 egui_extras = { version = "0.31.1", optional = true }
