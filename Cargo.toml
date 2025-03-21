@@ -31,7 +31,7 @@ bevy_ecs_tilemap = "0.15.0"
 bevy_asset_loader = { version = "0.22.0", features = ["2d"] }
 accesskit = "0.17"
 avian2d = "0.2.0"
-tiled = "0.11.0"
+tiled = "0.14.0"
 serde_json = "1.0"
 rand = "0.8"
 log = { version = "*", features = [
@@ -43,9 +43,6 @@ noise = "0.9"
 bevy-inspector-egui = { version = "0.29.1", optional = true }
 egui_plot = { version = "0.30.0", optional = true }
 egui_extras = { version = "0.30.0", optional = true }
-
-[target.wasm32-unknown-unknown]
-rustflags = ["--cfg", "getrandom_backend='wasm_js'"]
 
 [target.wasm32-unknown-unknown.dependencies]
 console_error_panic_hook = "0.1"

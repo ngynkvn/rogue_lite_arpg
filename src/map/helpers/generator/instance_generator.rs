@@ -1,6 +1,6 @@
 use bevy::prelude::*;
 use bevy_ecs_tilemap::map::TilemapSize;
-use rand::distr::weighted::WeightedIndex;
+use rand::distributions::WeightedIndex;
 use rand::prelude::Distribution;
 use rand::Rng;
 
