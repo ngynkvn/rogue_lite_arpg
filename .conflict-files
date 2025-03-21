@@ -1,3 +1,0 @@
-ancestorEntries = ["src/enemy/systems/load_enemy_data.rs", "src/map/systems/load_instance_data.rs"]
-ourEntries = ["src/enemy/systems/load_enemy_data.rs", "src/map/systems/load_instance_data.rs"]
-theirEntries = ["src/enemy/systems/load_enemy_data.rs", "src/map/systems/load_instance_data.rs"]
