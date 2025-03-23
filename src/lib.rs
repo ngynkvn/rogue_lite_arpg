@@ -3,6 +3,7 @@ pub mod ai;
 pub mod animation;
 pub mod combat;
 pub mod configuration;
+pub mod controller;
 pub mod despawn;
 pub mod econ;
 pub mod enemy;
@@ -18,16 +19,20 @@ pub mod ui;
 pub mod debug;
 
 #[cfg(target_arch = "wasm32")]
-use crate::configuration::plugins::WasmPlugins;
+pub mod wasm {
 
-#[cfg(target_arch = "wasm32")]
-use bevy::prelude::App;
+    use crate::configuration::plugins::WasmPlugins;
 
-use wasm_bindgen::prelude::*;
+    use bevy::prelude::App;
 
-#[wasm_bindgen(start)]
-pub fn start() {
-    console_error_panic_hook::set_once();
-    #[cfg(target_arch = "wasm32")]
-    App::new().add_plugins(WasmPlugins).run();
+    use wasm_bindgen::prelude::*;
+
+    #[wasm_bindgen(start)]
+    pub fn start() {
+        console_error_panic_hook::set_once();
+        #[cfg(target_arch = "wasm32")]
+        App::new().add_plugins(WasmPlugins).run();
+    }
 }
+#[cfg(target_arch = "wasm32")]
+pub use wasm::*;

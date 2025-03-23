@@ -1,5 +1,6 @@
 use avian2d::prelude::*;
 use bevy::prelude::*;
+use bevy_enhanced_input::prelude::Binding;
 
 use crate::{
     ai::{
@@ -7,6 +8,7 @@ use crate::{
         SimpleMotion,
     },
     combat::Health,
+    player::PlayerMovementEvent,
 };
 
 #[derive(Component)]
