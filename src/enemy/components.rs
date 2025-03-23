@@ -3,10 +3,24 @@ use std::collections::HashMap;
 use bevy::prelude::*;
 use serde::Deserialize;
 
-use crate::character::Character;
+use crate::{
+    ai::{state::ActionState, SimpleMotion},
+    animation::AnimationTimer,
+    combat::Health,
+};
 
 #[derive(Component)]
-#[require(Character, Experience)]
+#[require(
+    Health,
+    SimpleMotion,
+    RigidBody,
+    Collider,
+    CollidingEntities,
+    LockedAxes(|| LockedAxes::new().lock_rotation()),
+    Experience,
+    ActionState,
+    AnimationTimer
+)]
 pub struct Enemy;
 
 //Experience granted by the enemy when player defeats it
