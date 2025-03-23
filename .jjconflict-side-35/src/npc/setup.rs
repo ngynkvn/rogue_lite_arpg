@@ -3,10 +3,10 @@ use bevy::prelude::*;
 
 use crate::{
     ai::SimpleMotion,
-    combat::{damage::HurtBox, Health},
+    combat::Health,
     configuration::{
         assets::{SpriteAssets, SpriteSheetLayouts},
-        GameCollisionLayer, CHARACTER_FEET_POS_OFFSET,
+        GameCollisionLayer,
     },
     items::{equipment::Equipped, inventory::Inventory},
     map::NPCSpawnEvent,
@@ -61,33 +61,11 @@ pub fn spawn_npc(
         ))
         .observe(on_player_interaction)
         .with_children(|spawner| {
+            spawner.spawn((InteractionZone::NPC, Transform::from_xyz(0.0, -20.0, 0.0)));
             spawner.spawn((
-                InteractionZone::NPC,
-                Transform::from_xyz(0.0, CHARACTER_FEET_POS_OFFSET, 0.0),
-            ));
-
-            spawner.spawn((
-                HurtBox,
-                Collider::rectangle(26.0, 42.0),
-                Transform::from_xyz(0.0, -8.0, 0.0),
-                Sensor,
-                CollisionLayers::new(
-                    [GameCollisionLayer::AllyHurtBox],
-                    [GameCollisionLayer::HitBox],
-                ),
-            ));
-
-            spawner.spawn((
-                Transform::from_xyz(0.0, CHARACTER_FEET_POS_OFFSET, 0.0),
-                Collider::circle(10.0),
-                CollisionLayers::new(
-                    [GameCollisionLayer::Grounded],
-                    [
-                        GameCollisionLayer::Grounded,
-                        GameCollisionLayer::HighObstacle,
-                        GameCollisionLayer::LowObstacle,
-                    ],
-                ),
+                Transform::from_xyz(0.0, -20.0, 0.0),
+                Collider::circle(12.0),
+                CollisionLayers::new(GameCollisionLayer::Grounded, [GameCollisionLayer::Grounded]),
             ));
         })
         .add_child(mainhand)

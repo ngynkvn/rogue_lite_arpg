@@ -11,15 +11,9 @@ use crate::{
     player::components::Player,
 };
 
-pub const CHARACTER_FEET_POS_OFFSET: f32 = -24.0;
-
 #[derive(Component)]
 pub struct YSort {
-    /// z layer of sprite, only sprites on the same layer will be y-sorted correctly
-    z: f32,
-    /// in some instances we don't want to YSort from Sprite anchor, but instead
-    /// from the feet or some other position on the sprite
-    height_offset: f32,
+    pub z: f32,
 }
 
 impl Default for YSort {
@@ -30,17 +24,7 @@ impl Default for YSort {
 
 impl YSort {
     pub fn from_z(z_layer: ZLayer) -> Self {
-        Self {
-            z: z_layer.z(),
-            height_offset: 0.0,
-        }
-    }
-
-    pub fn from_offset(height_offset: f32) -> Self {
-        Self {
-            height_offset,
-            ..default()
-        }
+        Self { z: z_layer.z() }
     }
 }
 
@@ -50,8 +34,8 @@ pub fn ysort_transforms(
     map_layout: Res<MapLayout>,
 ) {
     for (mut transform, ysort) in transform_query.iter_mut() {
-        let relative_height_on_map = (transform.translation.y + ysort.height_offset)
-            / (map_layout.size.y as f32 * world_space_config.tile_size.y);
+        let relative_height_on_map =
+            transform.translation.y / (map_layout.size.y as f32 * world_space_config.tile_size.y);
 
         transform.translation.z = ysort.z - relative_height_on_map;
     }
