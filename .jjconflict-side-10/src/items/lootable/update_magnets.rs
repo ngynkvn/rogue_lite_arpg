@@ -8,12 +8,9 @@ const MAGNETIC_FORCE: f32 = 2000000.0;
 pub fn update_magnet_locations(
     mut commands: Commands,
     magnet_query: Query<(&Parent, &GlobalTransform, &CollidingEntities), With<Magnet>>,
-    player_query: Query<(Entity, &GlobalTransform), With<PlayerInteractionRadius>>,
+    player_query: Single<(Entity, &GlobalTransform), With<PlayerInteractionRadius>>,
 ) {
-    let Ok((player_entity, player_transform)) = player_query.get_single() else {
-        return;
-    };
-
+    let (player_entity, player_transform) = player_query.into_inner();
     for (parent_entity, magnet_transform, colliding_entities) in magnet_query.iter() {
         if colliding_entities.contains(&player_entity) {
             let direction = (player_transform.translation().truncate()

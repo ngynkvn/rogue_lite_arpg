@@ -6,7 +6,7 @@ use rand::Rng;
 use crate::{
     combat::{
         health::Health,
-        invulnerable::IFrames,
+        invulnerable::{HasIFrames, Invulnerable},
         status_effects::{components::EffectsList, events::ApplyEffect},
     },
     configuration::GameCollisionLayer,
@@ -56,8 +56,6 @@ pub struct HurtBox;
 
 #[derive(Event)]
 pub struct AttemptDamageEvent {
-    /// Not all damage gets blocked by invulnerable (ex: burn from status effect)
-    pub ignore_invulnerable: bool,
     /// We treat damage as a range with RNG determining which value is dealt
     pub damage: Damage,
     /// Not all damage has a "Source" entity, like environmental damage or damage-over-time effects
@@ -77,39 +75,27 @@ pub struct DefeatedEvent;
 pub fn on_damage_event(
     damage_trigger: Trigger<AttemptDamageEvent>,
     mut commands: Commands,
-    hurt_box_query: Query<&Parent, With<HurtBox>>,
-    mut damaged_query: Query<(&mut Health, Option<&mut IFrames>)>,
+    mut damaged_query: Query<(&mut Health, Option<&HasIFrames>), Without<Invulnerable>>,
     source_query: Query<&EffectsList>,
 ) {
-    // Damage can be applied to an entities hurtbox, or to the entity directly
-    let damaged_entity = if let Ok(hurt_box_parent) = hurt_box_query.get(damage_trigger.entity()) {
-        hurt_box_parent.get()
-    } else if damaged_query.contains(damage_trigger.entity()) {
-        damage_trigger.entity()
-    } else {
-        return;
-    };
-
-    if let Ok((mut health, has_iframes)) = damaged_query.get_mut(damaged_entity) {
-        // Entities have to "opt-in" to having iframes. Right now that is only the player
-        if let Some(mut iframes) = has_iframes {
-            if iframes.is_invulnerable && !damage_trigger.ignore_invulnerable {
-                return;
-            }
-
-            iframes.is_invulnerable = true;
-        }
-
+    if let Ok((mut health, has_iframes)) = damaged_query.get_mut(damage_trigger.entity()) {
         // Convert `Damage` to raw damage amount
         let damage = damage_trigger.damage.to_float();
         health.take_damage(damage);
 
         // Because AttemptDamageEvent may not result in damage being applied (invulnerable or entity without health)
         // we send this event for guranteed "X damage has been done". Proper change detection added to bevy would mean this isn't needed
-        commands.trigger_targets(DamageDealtEvent { damage }, damaged_entity);
+        commands.trigger_targets(DamageDealtEvent { damage }, damage_trigger.entity());
+
+        // Entities have to "opt-in" to having iframes. Right now that is only the player
+        if let Some(iframes) = has_iframes {
+            commands
+                .entity(damage_trigger.entity())
+                .insert(Invulnerable::new(iframes));
+        }
 
         if health.hp == 0.0 {
-            commands.trigger_targets(DefeatedEvent, damaged_entity);
+            commands.trigger_targets(DefeatedEvent, damage_trigger.entity());
         } else if let Some(source_entity) = damage_trigger.damage_source {
             // If entity is still alive and damage source exists and has effects list, we apply status effects
             if let Ok(effects_list) = source_query.get(source_entity) {
@@ -117,7 +103,7 @@ pub fn on_damage_event(
                     ApplyEffect {
                         effect: effects_list.effects.clone(),
                     },
-                    damaged_entity,
+                    damage_trigger.entity(),
                 );
             }
         }
