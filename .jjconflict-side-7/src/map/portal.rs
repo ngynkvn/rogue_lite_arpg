@@ -35,15 +35,11 @@ fn default_collision_layers() -> CollisionLayers {
 pub fn handle_portal_collisions(
     mut commands: Commands,
     portal_query: Query<(Entity, &CollidingEntities), With<Portal>>,
-    player_collider: Query<Entity, With<PlayerCollider>>,
+    player_entity: Single<Entity, With<PlayerCollider>>,
 ) {
-    let Ok(player_collider_entity) = player_collider.get_single() else {
-        return;
-    };
-
     for (entity, portal_colliding_entities) in portal_query.iter() {
         for &colliding_entity in portal_colliding_entities.iter() {
-            if colliding_entity == player_collider_entity {
+            if colliding_entity == *player_entity {
                 commands.trigger_targets(SpawnZoneEvent, entity);
             }
         }

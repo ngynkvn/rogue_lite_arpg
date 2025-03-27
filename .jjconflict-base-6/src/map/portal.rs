@@ -2,10 +2,8 @@ use avian2d::prelude::*;
 use bevy::prelude::*;
 
 use crate::{
-    configuration::{GameCollisionLayer, YSort},
-    labels::states::AppState,
-    map::components::SpawnZoneEvent,
-    player::PlayerCollider,
+    configuration::GameCollisionLayer, labels::states::AppState, map::components::SpawnZoneEvent,
+    player::Player,
 };
 
 use super::components::MapLayout;
@@ -19,7 +17,6 @@ use super::components::MapLayout;
     Collider(|| Collider::rectangle(32.0, 64.0)),
     CollidingEntities,
     CollisionLayers(default_collision_layers),
-    YSort
 )]
 pub struct Portal {
     pub map_layout: MapLayout,
@@ -35,15 +32,12 @@ fn default_collision_layers() -> CollisionLayers {
 pub fn handle_portal_collisions(
     mut commands: Commands,
     portal_query: Query<(Entity, &CollidingEntities), With<Portal>>,
-    player_collider: Query<Entity, With<PlayerCollider>>,
+    player_entity: Single<Entity, With<Player>>,
 ) {
-    let Ok(player_collider_entity) = player_collider.get_single() else {
-        return;
-    };
-
+    let player_entity = player_entity.into_inner();
     for (entity, portal_colliding_entities) in portal_query.iter() {
         for &colliding_entity in portal_colliding_entities.iter() {
-            if colliding_entity == player_collider_entity {
+            if colliding_entity == player_entity {
                 commands.trigger_targets(SpawnZoneEvent, entity);
             }
         }
