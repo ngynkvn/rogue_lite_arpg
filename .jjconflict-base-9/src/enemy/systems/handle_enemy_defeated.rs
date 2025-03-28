@@ -1,36 +1,29 @@
+use avian2d::prelude::ColliderDisabled;
 use bevy::prelude::*;
 
-use rand::{Rng, thread_rng};
+use rand::{thread_rng, Rng};
 
 use crate::{
-    ai::{SimpleMotion, state::ActionState},
-    combat::{Health, damage::DefeatedEvent},
+    ai::state::ActionState,
+    combat::{damage::DefeatedEvent, invulnerable::Invulnerable},
     despawn::components::LiveDuration,
-    economy::GoldDropEvent,
+    econ::gold_drop::GoldDropEvent,
     enemy::{Enemy, Experience},
-    items::{Item, ItemDropEvent, inventory::inventory::Inventory},
-    player::{PlayerStats, components::Player},
+    items::{inventory::inventory::Inventory, Item, ItemDropEvent},
+    player::{components::Player, PlayerStats},
 };
 
 pub fn on_enemy_defeated(
     trigger: Trigger<DefeatedEvent>,
     mut commands: Commands,
-    mut defeated_enemy_query: Query<
-        (
-            &Experience,
-            &Transform,
-            &mut SimpleMotion,
-            Option<&Inventory>,
-        ),
-        With<Enemy>,
-    >,
+    defeated_enemy_query: Query<(&Experience, &Transform, Option<&Inventory>), With<Enemy>>,
     player_query: Single<(&PlayerStats, &mut Player)>,
     item_query: Query<&Item>,
 ) {
     let mut rng = thread_rng();
 
-    if let Ok((experience_to_gain, transform, mut motion, inventory)) =
-        defeated_enemy_query.get_mut(trigger.entity())
+    if let Ok((experience_to_gain, transform, inventory)) =
+        defeated_enemy_query.get(trigger.entity())
     {
         let (player_stats, mut player) = player_query.into_inner();
         //Give EXP to the player
@@ -50,7 +43,7 @@ pub fn on_enemy_defeated(
             // Enemies drop their gold based on player luck
             if rng.gen_range(0.0..1.0) < (0.1 + (player_stats.luck as f32 / 100.0)) {
                 commands.trigger(GoldDropEvent {
-                    drop_location: transform.translation.truncate(),
+                    drop_location: *transform,
                     amount: inventory.coins,
                 });
             }
@@ -58,10 +51,9 @@ pub fn on_enemy_defeated(
 
         commands
             .entity(trigger.entity())
-            .insert((LiveDuration::new(2.0), ActionState::Defeated))
-            .remove::<Health>()
-            .despawn_descendants();
-
-        motion.stop_moving();
+            .insert(LiveDuration::new(2.0))
+            .insert(ActionState::Defeated)
+            .insert(ColliderDisabled)
+            .insert(Invulnerable::death());
     }
 }

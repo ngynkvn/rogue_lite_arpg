@@ -96,12 +96,8 @@ fn spawn_enemy(
                 Mana::new(100.0, 10.0),
                 Collider::rectangle(enemy_details.collider_size.0, enemy_details.collider_size.1),
                 CollisionLayers::new(
+                    [GameCollisionLayer::Grounded, GameCollisionLayer::Enemy],
                     [
-                        GameCollisionLayer::Grounded,
-                        GameCollisionLayer::EnemyHurtBox,
-                    ],
-                    [
-                        GameCollisionLayer::HitBox,
                         GameCollisionLayer::InAir,
                         GameCollisionLayer::Grounded,
                         GameCollisionLayer::HighObstacle,

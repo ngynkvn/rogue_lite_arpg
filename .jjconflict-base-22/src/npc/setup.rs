@@ -3,10 +3,10 @@ use bevy::prelude::*;
 
 use crate::{
     ai::SimpleMotion,
-    combat::{damage::HurtBox, Health},
+    combat::Health,
     configuration::{
-        assets::{Shadows, SpriteAssets, SpriteSheetLayouts},
-        spawn_shadow, GameCollisionLayer, CHARACTER_FEET_POS_OFFSET,
+        assets::{SpriteAssets, SpriteSheetLayouts},
+        GameCollisionLayer,
     },
     items::{equipment::Equipped, inventory::Inventory},
     map::NPCSpawnEvent,
@@ -21,7 +21,6 @@ pub fn spawn_npcs(
     mut commands: Commands,
     sprites: Res<SpriteAssets>,
     atlases: Res<SpriteSheetLayouts>,
-    shadows: Res<Shadows>,
 ) {
     // Define the NPC types we want to spawn in order
     let npc_types = [NPCType::Helper, NPCType::Shopkeeper, NPCType::StatTrainer];
@@ -29,24 +28,16 @@ pub fn spawn_npcs(
 
     // Zip the positions with NPC types and spawn them
     for (spawn_position, &npc_type) in npc_spawn_positions.iter().zip(npc_types.iter()) {
-        spawn_npc(
-            &mut commands,
-            npc_type,
-            *spawn_position,
-            &sprites,
-            &atlases,
-            &shadows,
-        );
+        spawn_npc(&mut commands, npc_type, *spawn_position, &sprites, &atlases);
     }
 }
 
 pub fn spawn_npc(
     commands: &mut Commands,
     npc_type: NPCType,
-    spawn_position: Vec2,
-    sprites: &SpriteAssets,
-    atlases: &SpriteSheetLayouts,
-    shadows: &Shadows,
+    spawn_position: Vec3,
+    sprites: &Res<SpriteAssets>,
+    atlases: &Res<SpriteSheetLayouts>,
 ) {
     let mainhand = npc_type.spawn_weapon(commands, sprites, atlases);
     let sprite_sheet_to_use = npc_type.get_sprite_sheet(sprites);
@@ -59,7 +50,7 @@ pub fn spawn_npc(
             Health::new(1000.0),
             npc_type,
             Inventory::default(),
-            Transform::from_translation(spawn_position.extend(0.0)),
+            Transform::from_translation(spawn_position),
             Sprite::from_atlas_image(
                 sprite_sheet_to_use,
                 TextureAtlas {
@@ -70,35 +61,11 @@ pub fn spawn_npc(
         ))
         .observe(on_player_interaction)
         .with_children(|spawner| {
-            spawn_shadow(spawner, shadows, CHARACTER_FEET_POS_OFFSET - 4.0);
-
+            spawner.spawn((InteractionZone::NPC, Transform::from_xyz(0.0, -20.0, 0.0)));
             spawner.spawn((
-                InteractionZone::NPC,
-                Transform::from_xyz(0.0, CHARACTER_FEET_POS_OFFSET, 0.0),
-            ));
-
-            spawner.spawn((
-                HurtBox,
-                Collider::rectangle(26.0, 42.0),
-                Transform::from_xyz(0.0, -8.0, 0.0),
-                Sensor,
-                CollisionLayers::new(
-                    [GameCollisionLayer::AllyHurtBox],
-                    [GameCollisionLayer::HitBox],
-                ),
-            ));
-
-            spawner.spawn((
-                Transform::from_xyz(0.0, CHARACTER_FEET_POS_OFFSET, 0.0),
-                Collider::circle(10.0),
-                CollisionLayers::new(
-                    [GameCollisionLayer::Grounded],
-                    [
-                        GameCollisionLayer::Grounded,
-                        GameCollisionLayer::HighObstacle,
-                        GameCollisionLayer::LowObstacle,
-                    ],
-                ),
+                Transform::from_xyz(0.0, -20.0, 0.0),
+                Collider::circle(12.0),
+                CollisionLayers::new(GameCollisionLayer::Grounded, [GameCollisionLayer::Grounded]),
             ));
         })
         .add_child(mainhand)

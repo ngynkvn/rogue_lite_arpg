@@ -1,14 +1,8 @@
-use avian2d::prelude::*;
 use bevy::prelude::*;
 
 use crate::{
-    ai::{state::ActionState, SimpleMotion},
-    animation::AnimationTimer,
-    combat::Health,
-    configuration::{
-        assets::{SpriteAssets, SpriteSheetLayouts},
-        YSort, CHARACTER_FEET_POS_OFFSET,
-    },
+    character::Character,
+    configuration::assets::{SpriteAssets, SpriteSheetLayouts},
     items::{spawn_axe, spawn_ice_staff, spawn_sword},
     player::interact::InteractionEvent,
 };
@@ -16,16 +10,7 @@ use crate::{
 use super::{on_game_guide_start, on_shop_keeper_store_open, on_stat_trainer_store_open};
 
 #[derive(Component)]
-#[require(
-    Health,
-    SimpleMotion,
-    RigidBody(|| RigidBody::Kinematic),
-    LockedAxes(|| LockedAxes::new().lock_rotation()),
-    TranslationInterpolation,
-    ActionState,
-    AnimationTimer,
-    YSort(|| YSort::from_offset(CHARACTER_FEET_POS_OFFSET))
-)]
+#[require(Character)]
 pub struct NPC;
 
 #[derive(Debug, Clone, Component, Copy)]
@@ -39,8 +24,8 @@ impl NPCType {
     pub fn spawn_weapon(
         &self,
         commands: &mut Commands,
-        sprites: &Res<SpriteAssets>,
-        atlases: &Res<SpriteSheetLayouts>,
+        sprites: &SpriteAssets,
+        atlases: &SpriteSheetLayouts,
     ) -> Entity {
         match self {
             NPCType::Helper => spawn_ice_staff(commands, sprites, atlases),

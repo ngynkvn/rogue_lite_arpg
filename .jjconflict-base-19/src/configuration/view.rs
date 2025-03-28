@@ -11,6 +11,8 @@ use crate::{
     player::components::Player,
 };
 
+use super::assets::Shadows;
+
 pub const CHARACTER_FEET_POS_OFFSET: f32 = -24.0;
 
 #[derive(Component)]
@@ -62,6 +64,7 @@ pub enum ZLayer {
     OnGround,
     InAir,
 
+    SpriteBackground,
     BehindSprite,
     AboveSprite,
 }
@@ -76,8 +79,42 @@ impl ZLayer {
             // Z layer is additive in parent/child hierarchies
             // Parent 1 + child entity weapon of 0.1 = 1.1
             // These are the relative z layers
+            ZLayer::SpriteBackground => -2.0,
             ZLayer::BehindSprite => -0.001,
             ZLayer::AboveSprite => 0.001,
+        }
+    }
+}
+
+pub struct YSort {
+    pub z: f32,
+}
+
+pub enum ZLayer {
+    Ground,
+    OnGround,
+    InAir,
+    VisualEffect,
+
+    WeaponBehindSprite,
+    WeaponAboveSprite,
+    LevelUpEffect,
+}
+
+impl ZLayer {
+    pub fn z(&self) -> f32 {
+        match self {
+            ZLayer::Ground => -1.0,
+            ZLayer::OnGround => 0.5,
+            ZLayer::InAir => 1.0,
+            ZLayer::VisualEffect => 2.0,
+
+            // Z layer is additive in parent/child hierarchies
+            // Parent 1 + child entity weapon of 0.1 = 1.1
+            // These are the reletive z layers
+            ZLayer::WeaponBehindSprite => -0.4,
+            ZLayer::WeaponAboveSprite => 0.1,
+            ZLayer::LevelUpEffect => -0.1,
         }
     }
 }
@@ -111,11 +148,10 @@ pub fn spawn_camera(mut commands: Commands) {
     ));
 }
 
-const DECAY_RATE: f32 = 2.9957; // f32::ln(20.0);
+const DECAY_RATE: f32 = 2.3; // f32::ln(10.0);
 const TARGET_BIAS: f32 = 0.35; // 0.5 is middle of the two positions between the player and the aim position
 const CAMERA_DISTANCE_CONSTRAINT: f32 = 120.0; // The camera will not go further than this distance from the player
 
-#[allow(clippy::type_complexity)]
 pub fn camera_follow_system(
     pq: Query<(&Transform, &AimPosition), (With<Player>, Without<Camera>)>,
     mut cq: Query<&mut Transform, (With<Camera>, Without<Player>)>,
@@ -139,7 +175,6 @@ pub fn camera_follow_system(
         .smooth_nudge(&offset, DECAY_RATE, time.delta_secs());
 }
 
-#[allow(clippy::type_complexity)]
 pub fn camera_debug_system(
     pq: Query<(&Transform, &AimPosition), (With<Player>, Without<Camera>)>,
     mut gizmos: Gizmos,
@@ -160,4 +195,12 @@ pub fn camera_debug_system(
     gizmos
         .circle_2d(player_pos, CAMERA_DISTANCE_CONSTRAINT, PURPLE_700)
         .resolution(64);
+}
+
+pub fn spawn_shadow(spawner: &mut ChildBuilder, shadows: &Shadows, y_offset: f32) {
+    spawner.spawn((
+        Mesh2d(shadows.character_shadow.handle.clone()),
+        MeshMaterial2d(shadows.shadow_color.handle.clone()),
+        Transform::from_xyz(0.0, y_offset, ZLayer::SpriteBackground.z()),
+    ));
 }

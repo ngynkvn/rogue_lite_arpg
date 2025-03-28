@@ -2,12 +2,11 @@ use avian2d::prelude::*;
 use bevy::prelude::*;
 
 use crate::{
-    ai::{state::ActionState, SimpleMotion},
-    animation::AnimationTimer,
+    ai::SimpleMotion,
     combat::Health,
     configuration::{
         assets::{SpriteAssets, SpriteSheetLayouts},
-        YSort, CHARACTER_FEET_POS_OFFSET,
+        GameCollisionLayer,
     },
     items::{spawn_axe, spawn_ice_staff, spawn_sword},
     player::interact::InteractionEvent,
@@ -19,12 +18,9 @@ use super::{on_game_guide_start, on_shop_keeper_store_open, on_stat_trainer_stor
 #[require(
     Health,
     SimpleMotion,
+    Collider(|| Collider::rectangle(32.0, 32.0)),
     RigidBody(|| RigidBody::Kinematic),
-    LockedAxes(|| LockedAxes::new().lock_rotation()),
-    TranslationInterpolation,
-    ActionState,
-    AnimationTimer,
-    YSort(|| YSort::from_offset(CHARACTER_FEET_POS_OFFSET))
+    CollisionLayers(|| CollisionLayers::new(GameCollisionLayer::Grounded, [GameCollisionLayer::Grounded, GameCollisionLayer::InAir]))
 )]
 pub struct NPC;
 
