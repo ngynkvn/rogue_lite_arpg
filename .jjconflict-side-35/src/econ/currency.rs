@@ -17,7 +17,6 @@ use crate::{
     )),
     CollidingEntities,
     LinearDamping(|| LinearDamping(2.0)),
-    TranslationInterpolation,
     YSort
 )]
 pub struct Currency {

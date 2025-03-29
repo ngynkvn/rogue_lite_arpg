@@ -4,17 +4,17 @@ use avian2d::prelude::*;
 use bevy::prelude::*;
 
 use crate::{
-    combat::{invulnerable::HasIFrames, Mana},
+    combat::{damage::HurtBox, invulnerable::HasIFrames, Mana},
     configuration::{
         assets::{SpriteAssets, SpriteSheetLayouts},
         GameCollisionLayer, ZLayer,
     },
     items::{
-        equipment::{on_equipment_activated, Equipped},
+        equipment::{on_equipment_activated, on_equipment_deactivated, Equipped},
         inventory::Inventory,
         *,
     },
-    player::{interact::PlayerInteractionRadius, systems::*, Player},
+    player::{interact::PlayerInteractionRadius, systems::*, Player, PlayerCollider},
     progression::GameProgress,
 };
 
@@ -29,8 +29,9 @@ pub fn spawn_player(
         spawn_fire_staff(&mut commands, &sprites, &texture_layouts),
         spawn_health_potion(&mut commands, &sprites),
         spawn_sword(&mut commands, &sprites),
-        spawn_axe(&mut commands, &sprites),
-        spawn_offhand(&mut commands, &sprites, "tome_of_healing"),
+        spawn_offhand(&mut commands, &sprites, &texture_layouts, "tome_of_healing"),
+        spawn_offhand(&mut commands, &sprites, &texture_layouts, "magic_shield"),
+        spawn_offhand(&mut commands, &sprites, &texture_layouts, "knight_shield"),
     ];
 
     let player = commands
@@ -72,10 +73,14 @@ pub fn spawn_player(
         .with_children(|spawner| {
             // collider to bump into stuff
             spawner.spawn((
+                PlayerCollider,
                 Transform::from_xyz(0.0, -20.0, 0.0),
                 Collider::circle(12.0),
                 CollisionLayers::new(
-                    [GameCollisionLayer::Grounded],
+                    [
+                        GameCollisionLayer::Grounded,
+                        GameCollisionLayer::PlayerCollider,
+                    ],
                     [
                         GameCollisionLayer::Grounded,
                         GameCollisionLayer::HighObstacle,
@@ -84,7 +89,17 @@ pub fn spawn_player(
                 ),
             ));
 
-            // hitbox
+            // hurtbox
+            spawner.spawn((
+                HurtBox,
+                Collider::rectangle(26.0, 42.0),
+                Transform::from_xyz(0.0, -5.0, 0.0),
+                Sensor,
+                CollisionLayers::new(
+                    [GameCollisionLayer::AllyHurtBox],
+                    [GameCollisionLayer::HitBox],
+                ),
+            ));
 
             // player interaction radius
             spawner.spawn((
@@ -94,14 +109,15 @@ pub fn spawn_player(
                 Sensor,
                 CollidingEntities::default(),
                 CollisionLayers::new(
-                    [GameCollisionLayer::Player],
-                    [GameCollisionLayer::Interaction, GameCollisionLayer::Magnet],
+                    [GameCollisionLayer::PlayerInteractionRadius],
+                    [GameCollisionLayer::Interaction],
                 ),
             ));
         })
         .add_children(&starting_items)
         .observe(death::on_player_defeated)
         .observe(on_equipment_activated)
+        .observe(on_equipment_deactivated)
         .id();
 
     commands
