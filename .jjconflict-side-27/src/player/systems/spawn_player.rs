@@ -1,13 +1,11 @@
-use std::time::Duration;
-
 use avian2d::prelude::*;
 use bevy::prelude::*;
 
 use crate::{
-    combat::{damage::HurtBox, invulnerable::HasIFrames, Mana},
+    combat::{damage::HurtBox, Mana},
     configuration::{
-        assets::{SpriteAssets, SpriteSheetLayouts},
-        GameCollisionLayer, ZLayer, CHARACTER_FEET_POS_OFFSET,
+        assets::{Shadows, SpriteAssets, SpriteSheetLayouts},
+        spawn_shadow, GameCollisionLayer, CHARACTER_FEET_POS_OFFSET,
     },
     items::{
         equipment::{on_equipment_activated, on_equipment_deactivated, Equipped},
@@ -24,6 +22,7 @@ pub fn spawn_player(
     texture_layouts: Res<SpriteSheetLayouts>,
     game_progress: Res<GameProgress>,
     atlases: Res<SpriteSheetLayouts>,
+    shadows: Res<Shadows>,
 ) {
     let starting_items = [
         spawn_fire_staff(&mut commands, &sprites, &texture_layouts),
@@ -43,11 +42,7 @@ pub fn spawn_player(
                 .max_capacity(50)
                 .build(),
             Mana::new(100.0, 10.0),
-            HasIFrames {
-                duration: Duration::from_secs(1),
-            },
             game_progress.base_stats.clone(),
-            Transform::from_xyz(0., 0., ZLayer::OnGround.z()),
             Sprite::from_atlas_image(
                 sprites.player_sprite_sheet.clone(),
                 TextureAtlas {
@@ -57,6 +52,8 @@ pub fn spawn_player(
             ),
         ))
         .with_children(|spawner| {
+            spawn_shadow(spawner, &shadows, CHARACTER_FEET_POS_OFFSET - 4.0);
+
             // collider to bump into stuff
             spawner.spawn((
                 PlayerCollider,

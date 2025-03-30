@@ -11,9 +11,17 @@ use crate::{
     player::components::Player,
 };
 
+use super::assets::Shadows;
+
+pub const CHARACTER_FEET_POS_OFFSET: f32 = -24.0;
+
 #[derive(Component)]
 pub struct YSort {
-    pub z: f32,
+    /// z layer of sprite, only sprites on the same layer will be y-sorted correctly
+    z: f32,
+    /// in some instances we don't want to YSort from Sprite anchor, but instead
+    /// from the feet or some other position on the sprite
+    height_offset: f32,
 }
 
 impl Default for YSort {
@@ -24,7 +32,17 @@ impl Default for YSort {
 
 impl YSort {
     pub fn from_z(z_layer: ZLayer) -> Self {
-        Self { z: z_layer.z() }
+        Self {
+            z: z_layer.z(),
+            height_offset: 0.0,
+        }
+    }
+
+    pub fn from_offset(height_offset: f32) -> Self {
+        Self {
+            height_offset,
+            ..default()
+        }
     }
 }
 
@@ -34,8 +52,8 @@ pub fn ysort_transforms(
     map_layout: Res<MapLayout>,
 ) {
     for (mut transform, ysort) in transform_query.iter_mut() {
-        let relative_height_on_map =
-            transform.translation.y / (map_layout.size.y as f32 * world_space_config.tile_size.y);
+        let relative_height_on_map = (transform.translation.y + ysort.height_offset)
+            / (map_layout.size.y as f32 * world_space_config.tile_size.y);
 
         transform.translation.z = ysort.z - relative_height_on_map;
     }
@@ -46,6 +64,7 @@ pub enum ZLayer {
     OnGround,
     InAir,
 
+    SpriteBackground,
     BehindSprite,
     AboveSprite,
 }
@@ -60,6 +79,7 @@ impl ZLayer {
             // Z layer is additive in parent/child hierarchies
             // Parent 1 + child entity weapon of 0.1 = 1.1
             // These are the relative z layers
+            ZLayer::SpriteBackground => -2.0,
             ZLayer::BehindSprite => -0.001,
             ZLayer::AboveSprite => 0.001,
         }
@@ -95,7 +115,7 @@ pub fn spawn_camera(mut commands: Commands) {
     ));
 }
 
-const DECAY_RATE: f32 = 2.9957; // f32::ln(20.0);
+const DECAY_RATE: f32 = 2.3; // f32::ln(10.0);
 const TARGET_BIAS: f32 = 0.35; // 0.5 is middle of the two positions between the player and the aim position
 const CAMERA_DISTANCE_CONSTRAINT: f32 = 120.0; // The camera will not go further than this distance from the player
 
@@ -144,4 +164,12 @@ pub fn camera_debug_system(
     gizmos
         .circle_2d(player_pos, CAMERA_DISTANCE_CONSTRAINT, PURPLE_700)
         .resolution(64);
+}
+
+pub fn spawn_shadow(spawner: &mut ChildBuilder, shadows: &Shadows, y_offset: f32) {
+    spawner.spawn((
+        Mesh2d(shadows.character_shadow.handle.clone()),
+        MeshMaterial2d(shadows.shadow_color.handle.clone()),
+        Transform::from_xyz(0.0, y_offset, ZLayer::SpriteBackground.z()),
+    ));
 }

@@ -5,79 +5,37 @@ use bevy::{
     window::WindowResolution,
 };
 
-use crate::{
-    ai::state::AimPosition,
-    map::components::{MapLayout, WorldSpaceConfig},
-    player::components::Player,
-};
+use crate::{ai::state::AimPosition, player::components::Player};
 
-pub const CHARACTER_FEET_POS_OFFSET: f32 = -24.0;
-
-#[derive(Component)]
 pub struct YSort {
-    /// z layer of sprite, only sprites on the same layer will be y-sorted correctly
-    z: f32,
-    /// in some instances we don't want to YSort from Sprite anchor, but instead
-    /// from the feet or some other position on the sprite
-    height_offset: f32,
-}
-
-impl Default for YSort {
-    fn default() -> Self {
-        Self::from_z(ZLayer::OnGround)
-    }
-}
-
-impl YSort {
-    pub fn from_z(z_layer: ZLayer) -> Self {
-        Self {
-            z: z_layer.z(),
-            height_offset: 0.0,
-        }
-    }
-
-    pub fn from_offset(height_offset: f32) -> Self {
-        Self {
-            height_offset,
-            ..default()
-        }
-    }
-}
-
-pub fn ysort_transforms(
-    mut transform_query: Query<(&mut Transform, &YSort)>,
-    world_space_config: Res<WorldSpaceConfig>,
-    map_layout: Res<MapLayout>,
-) {
-    for (mut transform, ysort) in transform_query.iter_mut() {
-        let relative_height_on_map = (transform.translation.y + ysort.height_offset)
-            / (map_layout.size.y as f32 * world_space_config.tile_size.y);
-
-        transform.translation.z = ysort.z - relative_height_on_map;
-    }
+    pub z: f32,
 }
 
 pub enum ZLayer {
     Ground,
     OnGround,
     InAir,
+    VisualEffect,
 
-    BehindSprite,
-    AboveSprite,
+    WeaponBehindSprite,
+    WeaponAboveSprite,
+    LevelUpEffect,
 }
 
 impl ZLayer {
     pub fn z(&self) -> f32 {
         match self {
-            ZLayer::Ground => 0.0,
-            ZLayer::OnGround => 5.0,
-            ZLayer::InAir => 10.0,
+            ZLayer::Ground => -1.0,
+            ZLayer::OnGround => 0.5,
+            ZLayer::InAir => 1.0,
+            ZLayer::VisualEffect => 2.0,
 
             // Z layer is additive in parent/child hierarchies
             // Parent 1 + child entity weapon of 0.1 = 1.1
-            // These are the relative z layers
-            ZLayer::BehindSprite => -0.001,
-            ZLayer::AboveSprite => 0.001,
+            // These are the reletive z layers
+            ZLayer::WeaponBehindSprite => -0.4,
+            ZLayer::WeaponAboveSprite => 0.1,
+            ZLayer::LevelUpEffect => -0.1,
         }
     }
 }
