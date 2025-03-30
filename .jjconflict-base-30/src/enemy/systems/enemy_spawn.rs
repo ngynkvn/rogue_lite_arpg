@@ -3,11 +3,15 @@ use bevy::prelude::*;
 use serde::Serialize;
 
 use crate::{
-    ai::SimpleMotion,
-    combat::{damage::HurtBox, Health, Mana},
+    ai::{
+        state::{ActionState, AimPosition, FacingDirection},
+        SimpleMotion,
+    },
+    animation::{AnimationTimer, DefaultAnimationConfig},
+    combat::{Health, Mana},
     configuration::{
         assets::{SpriteAssets, SpriteSheetLayouts},
-        GameCollisionLayer, CHARACTER_FEET_POS_OFFSET,
+        GameCollisionLayer,
     },
     enemy::{systems::on_enemy_defeated, Enemy, EnemyAssets},
     items::{
@@ -53,6 +57,7 @@ pub fn spawn_enemies(
     enemy_trigger: Trigger<EnemiesSpawnEvent>,
     mut commands: Commands,
     enemy_assets: Res<EnemyAssets>,
+    animation_config: Res<DefaultAnimationConfig>,
     sprites: Res<SpriteAssets>,
     atlases: Res<SpriteSheetLayouts>,
 ) {
@@ -63,6 +68,7 @@ pub fn spawn_enemies(
             &enemy_name,
             &enemy_assets,
             spawn_data,
+            &animation_config,
             &sprites,
             &atlases,
         );
@@ -74,10 +80,21 @@ fn spawn_enemy(
     enemy_name: &str,
     enemy_assets: &EnemyAssets,
     spawn_data: EnemySpawnData,
+    animation_config: &DefaultAnimationConfig,
     sprites: &SpriteAssets,
     atlases: &SpriteSheetLayouts,
 ) {
     if let Some(enemy_details) = enemy_assets.enemy_config.get(enemy_name) {
+        let sprite = Sprite::from_atlas_image(
+            spawn_data.enemy_type.sprite(sprites),
+            TextureAtlas {
+                layout: atlases.enemy_atlas_layout.clone(),
+                index: animation_config
+                    .get_indices(ActionState::Idle, FacingDirection::Down)
+                    .first,
+            },
+        );
+
         let starting_items = [
             spawn_mainhand_weapon(commands, sprites, atlases, &enemy_details.weapon),
             spawn_health_potion(commands, sprites),
@@ -93,46 +110,31 @@ fn spawn_enemy(
                     .build(),
                 SimpleMotion::new(enemy_details.simple_motion_speed),
                 Health::new(enemy_details.health),
+                LockedAxes::new().lock_rotation(),
+                RigidBody::Dynamic,
+                AimPosition::default(),
                 Mana::new(100.0, 10.0),
-                Transform::from_translation(spawn_data.position),
-                Sprite::from_atlas_image(
-                    spawn_data.enemy_type.sprite(sprites),
-                    TextureAtlas {
-                        layout: atlases.enemy_atlas_layout.clone(),
-                        ..default()
-                    },
+                ActionState::Idle,
+                Collider::rectangle(enemy_details.collider_size.0, enemy_details.collider_size.1),
+                CollisionLayers::new(
+                    [GameCollisionLayer::Grounded, GameCollisionLayer::Enemy],
+                    [
+                        GameCollisionLayer::InAir,
+                        GameCollisionLayer::Grounded,
+                        GameCollisionLayer::HighObstacle,
+                        GameCollisionLayer::LowObstacle,
+                    ],
+                ),
+                (
+                    Transform::from_translation(spawn_data.position),
+                    animation_config.get_indices(ActionState::Idle, FacingDirection::Down),
+                    AnimationTimer(
+                        animation_config.get_timer(ActionState::Idle, FacingDirection::Down),
+                    ),
+                    sprite,
+                    FacingDirection::Down,
                 ),
             ))
-            .with_children(|spawner| {
-                // collider to bump into stuff
-                spawner.spawn((
-                    Transform::from_xyz(0.0, CHARACTER_FEET_POS_OFFSET, 0.0),
-                    Collider::circle(10.0),
-                    CollisionLayers::new(
-                        [GameCollisionLayer::Grounded],
-                        [
-                            GameCollisionLayer::Grounded,
-                            GameCollisionLayer::HighObstacle,
-                            GameCollisionLayer::LowObstacle,
-                        ],
-                    ),
-                ));
-
-                // hurtbox
-                spawner.spawn((
-                    HurtBox,
-                    Collider::rectangle(
-                        enemy_details.collider_size.0,
-                        enemy_details.collider_size.1,
-                    ),
-                    Transform::from_xyz(0.0, -8.0, 0.0),
-                    Sensor,
-                    CollisionLayers::new(
-                        [GameCollisionLayer::EnemyHurtBox],
-                        [GameCollisionLayer::HitBox],
-                    ),
-                ));
-            })
             .add_children(&starting_items)
             .observe(on_enemy_defeated)
             .observe(on_equipment_activated)

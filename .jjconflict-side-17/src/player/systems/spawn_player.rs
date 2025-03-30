@@ -1,20 +1,18 @@
-use std::time::Duration;
-
 use avian2d::prelude::*;
 use bevy::prelude::*;
 
 use crate::{
-    combat::{invulnerable::HasIFrames, Mana},
+    combat::{damage::HurtBox, Mana},
     configuration::{
-        assets::{SpriteAssets, SpriteSheetLayouts},
-        GameCollisionLayer, ZLayer,
+        assets::{Shadows, SpriteAssets, SpriteSheetLayouts},
+        spawn_shadow, GameCollisionLayer, CHARACTER_FEET_POS_OFFSET,
     },
     items::{
         equipment::{on_equipment_activated, on_equipment_deactivated, Equipped},
         inventory::Inventory,
         *,
     },
-    player::{interact::PlayerInteractionRadius, systems::*, Player},
+    player::{interact::PlayerInteractionRadius, systems::*, Player, PlayerCollider},
     progression::GameProgress,
 };
 
@@ -24,6 +22,7 @@ pub fn spawn_player(
     texture_layouts: Res<SpriteSheetLayouts>,
     game_progress: Res<GameProgress>,
     atlases: Res<SpriteSheetLayouts>,
+    shadows: Res<Shadows>,
 ) {
     let starting_items = [
         spawn_fire_staff(&mut commands, &sprites, &texture_layouts),
@@ -43,25 +42,7 @@ pub fn spawn_player(
                 .max_capacity(50)
                 .build(),
             Mana::new(100.0, 10.0),
-            HasIFrames {
-                duration: Duration::from_secs(1),
-            },
             game_progress.base_stats.clone(),
-            // Collider::rectangle(40.0, 50.0),
-            // Sensor,
-            // CollisionLayers::new(
-            //     [GameCollisionLayer::Player],
-            //     [
-            //         GameCollisionLayer::Enemy,
-            //         GameCollisionLayer::Interaction,
-            //         GameCollisionLayer::InAir,
-            //         GameCollisionLayer::Grounded,
-            //         GameCollisionLayer::HighObstacle,
-            //         GameCollisionLayer::LowObstacle,
-            //         GameCollisionLayer::Magnet,
-            //     ],
-            // ),
-            Transform::from_xyz(0., 0., ZLayer::OnGround.z()),
             Sprite::from_atlas_image(
                 sprites.player_sprite_sheet.clone(),
                 TextureAtlas {
@@ -71,12 +52,18 @@ pub fn spawn_player(
             ),
         ))
         .with_children(|spawner| {
+            spawn_shadow(spawner, &shadows, CHARACTER_FEET_POS_OFFSET - 4.0);
+
             // collider to bump into stuff
             spawner.spawn((
-                Transform::from_xyz(0.0, -20.0, 0.0),
-                Collider::circle(12.0),
+                PlayerCollider,
+                Transform::from_xyz(0.0, CHARACTER_FEET_POS_OFFSET, 0.0),
+                Collider::circle(10.0),
                 CollisionLayers::new(
-                    [GameCollisionLayer::Grounded],
+                    [
+                        GameCollisionLayer::Grounded,
+                        GameCollisionLayer::PlayerCollider,
+                    ],
                     [
                         GameCollisionLayer::Grounded,
                         GameCollisionLayer::HighObstacle,
@@ -85,18 +72,25 @@ pub fn spawn_player(
                 ),
             ));
 
-            // hitbox
+            // hurtbox
+            spawner.spawn((
+                HurtBox,
+                Collider::rectangle(26.0, 42.0),
+                Transform::from_xyz(0.0, -8.0, 0.0),
+                Sensor,
+                CollisionLayers::new(
+                    [GameCollisionLayer::AllyHurtBox],
+                    [GameCollisionLayer::HitBox],
+                ),
+            ));
 
             // player interaction radius
             spawner.spawn((
                 PlayerInteractionRadius,
-                Transform::from_xyz(0.0, -20.0, 0.0),
-                Collider::circle(20.0),
-                Sensor,
-                CollidingEntities::default(),
+                Transform::from_xyz(0.0, CHARACTER_FEET_POS_OFFSET, 0.0),
                 CollisionLayers::new(
-                    [GameCollisionLayer::Player],
-                    [GameCollisionLayer::Interaction, GameCollisionLayer::Magnet],
+                    [GameCollisionLayer::PlayerInteractionRadius],
+                    [GameCollisionLayer::Interaction],
                 ),
             ));
         })

@@ -1,15 +1,15 @@
 use bevy::prelude::*;
 
-use rand::{thread_rng, Rng};
+use rand::{Rng, thread_rng};
 
 use crate::{
-    ai::{state::ActionState, SimpleMotion},
-    combat::{damage::DefeatedEvent, Health},
+    ai::{SimpleMotion, state::ActionState},
+    combat::{Health, damage::DefeatedEvent},
     despawn::components::LiveDuration,
     economy::GoldDropEvent,
     enemy::{Enemy, Experience},
-    items::{inventory::inventory::Inventory, Item, ItemDropEvent},
-    player::{components::Player, PlayerStats},
+    items::{Item, ItemDropEvent, inventory::inventory::Inventory},
+    player::{PlayerStats, components::Player},
 };
 
 pub fn on_enemy_defeated(
