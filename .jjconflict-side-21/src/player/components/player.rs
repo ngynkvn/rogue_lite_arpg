@@ -3,7 +3,6 @@ use bevy::prelude::*;
 
 use crate::{
     ai::{state::ActionState, SimpleMotion},
-    animation::AnimationTimer,
     combat::Health,
 };
 
@@ -17,7 +16,6 @@ const PLAYER_LEVEL_REQUIREMENT_MULTIPLIER: f32 = 2.0;
     RigidBody,
     LockedAxes(|| LockedAxes::new().lock_rotation()),
     ActionState,
-    AnimationTimer,
 )]
 pub struct Player {
     current_level: u32,

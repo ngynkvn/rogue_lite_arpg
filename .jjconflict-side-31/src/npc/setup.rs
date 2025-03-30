@@ -4,7 +4,6 @@ use bevy::prelude::*;
 use crate::{
     ai::SimpleMotion,
     combat::Health,
-    configuration::ZLayer,
     configuration::{
         assets::{SpriteAssets, SpriteSheetLayouts},
         GameCollisionLayer,
@@ -62,7 +61,7 @@ pub fn spawn_npc(
         ))
         .observe(on_player_interaction)
         .with_children(|spawner| {
-            spawner.spawn(InteractionZone::NPC);
+            spawner.spawn((InteractionZone::NPC, Transform::from_xyz(0.0, -20.0, 0.0)));
             spawner.spawn((
                 Transform::from_xyz(0.0, -20.0, 0.0),
                 Collider::circle(12.0),

@@ -7,15 +7,14 @@ use crate::{
     combat::{invulnerable::HasIFrames, Mana},
     configuration::{
         assets::{SpriteAssets, SpriteSheetLayouts},
-        GameCollisionLayer,
+        GameCollisionLayer, ZLayer,
     },
     items::{
-        equipment::{on_equipment_activated, Equipped},
+        equipment::{on_equipment_activated, on_equipment_deactivated, Equipped},
         inventory::Inventory,
         *,
     },
-    labels::layer::ZLayer,
-    player::{systems::*, Player},
+    player::{interact::PlayerInteractionRadius, systems::*, Player},
     progression::GameProgress,
 };
 
@@ -30,8 +29,9 @@ pub fn spawn_player(
         spawn_fire_staff(&mut commands, &sprites, &texture_layouts),
         spawn_health_potion(&mut commands, &sprites),
         spawn_sword(&mut commands, &sprites),
-        spawn_axe(&mut commands, &sprites),
-        spawn_offhand(&mut commands, &sprites, "tome_of_healing"),
+        spawn_offhand(&mut commands, &sprites, &texture_layouts, "tome_of_healing"),
+        spawn_offhand(&mut commands, &sprites, &texture_layouts, "magic_shield"),
+        spawn_offhand(&mut commands, &sprites, &texture_layouts, "knight_shield"),
     ];
 
     let player = commands
@@ -47,20 +47,21 @@ pub fn spawn_player(
                 duration: Duration::from_secs(1),
             },
             game_progress.base_stats.clone(),
-            Collider::rectangle(40.0, 50.0),
-            CollisionLayers::new(
-                [GameCollisionLayer::Player, GameCollisionLayer::Grounded],
-                [
-                    GameCollisionLayer::Enemy,
-                    GameCollisionLayer::Interaction,
-                    GameCollisionLayer::InAir,
-                    GameCollisionLayer::Grounded,
-                    GameCollisionLayer::HighObstacle,
-                    GameCollisionLayer::LowObstacle,
-                    GameCollisionLayer::Magnet,
-                ],
-            ),
-            Transform::from_xyz(0., 0., ZLayer::Player.z()),
+            // Collider::rectangle(40.0, 50.0),
+            // Sensor,
+            // CollisionLayers::new(
+            //     [GameCollisionLayer::Player],
+            //     [
+            //         GameCollisionLayer::Enemy,
+            //         GameCollisionLayer::Interaction,
+            //         GameCollisionLayer::InAir,
+            //         GameCollisionLayer::Grounded,
+            //         GameCollisionLayer::HighObstacle,
+            //         GameCollisionLayer::LowObstacle,
+            //         GameCollisionLayer::Magnet,
+            //     ],
+            // ),
+            Transform::from_xyz(0., 0., ZLayer::OnGround.z()),
             Sprite::from_atlas_image(
                 sprites.player_sprite_sheet.clone(),
                 TextureAtlas {
@@ -69,9 +70,40 @@ pub fn spawn_player(
                 },
             ),
         ))
+        .with_children(|spawner| {
+            // collider to bump into stuff
+            spawner.spawn((
+                Transform::from_xyz(0.0, -20.0, 0.0),
+                Collider::circle(12.0),
+                CollisionLayers::new(
+                    [GameCollisionLayer::Grounded],
+                    [
+                        GameCollisionLayer::Grounded,
+                        GameCollisionLayer::HighObstacle,
+                        GameCollisionLayer::LowObstacle,
+                    ],
+                ),
+            ));
+
+            // hitbox
+
+            // player interaction radius
+            spawner.spawn((
+                PlayerInteractionRadius,
+                Transform::from_xyz(0.0, -20.0, 0.0),
+                Collider::circle(20.0),
+                Sensor,
+                CollidingEntities::default(),
+                CollisionLayers::new(
+                    [GameCollisionLayer::Player],
+                    [GameCollisionLayer::Interaction, GameCollisionLayer::Magnet],
+                ),
+            ));
+        })
         .add_children(&starting_items)
         .observe(death::on_player_defeated)
         .observe(on_equipment_activated)
+        .observe(on_equipment_deactivated)
         .id();
 
     commands
