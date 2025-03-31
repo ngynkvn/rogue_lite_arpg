@@ -1,17 +1,28 @@
 use bevy::prelude::*;
 
 use crate::{
+    configuration::ZLayer,
     despawn::components::LiveDuration,
-    labels::layer::ZLayer,
     player::{events::PlayerLevelUpEvent, Player},
 };
 
 #[derive(Component)]
 pub struct LevelUpEffect;
+pub struct LevelUpEffect;
 
 #[derive(Component)]
 pub struct LevelUpText;
 
+/// Starting and ending size of level up ring animation
+const LEVEL_UP_RING_SIZE: (f32, f32) = (5.0, 40.0);
+const MAX_RING_SCALE: f32 = LEVEL_UP_RING_SIZE.1 / LEVEL_UP_RING_SIZE.0;
+const LEVEL_UP_ROTATION_SPEED: f32 = 2.0;
+const LEVEL_UP_ANIMATION_DURATION: f32 = 1.2;
+const LEVEL_UP_TEXT_MAX_HEIGHT: f32 = 100.0;
+
+pub fn on_player_experience_change(mut commands: Commands, mut player: Single<&mut Player>) {
+    while player.attempt_level_up() {
+        commands.trigger(PlayerLevelUpEvent);
 /// Starting and ending size of level up ring animation
 const LEVEL_UP_RING_SIZE: (f32, f32) = (5.0, 40.0);
 const MAX_RING_SCALE: f32 = LEVEL_UP_RING_SIZE.1 / LEVEL_UP_RING_SIZE.0;

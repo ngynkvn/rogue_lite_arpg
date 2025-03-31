@@ -14,10 +14,9 @@ const PLAYER_LEVEL_REQUIREMENT_MULTIPLIER: f32 = 2.0;
 #[derive(Component)]
 #[require(
     Health(|| Health::new(100.0)),
-    SimpleMotion(|| SimpleMotion::new(150.0)),
+    SimpleMotion(|| SimpleMotion::new(350.0)),
     RigidBody,
     LockedAxes(|| LockedAxes::new().lock_rotation()),
-    TranslationExtrapolation,
     ActionState,
     AnimationTimer,
     YSort(|| YSort::from_offset(CHARACTER_FEET_POS_OFFSET))

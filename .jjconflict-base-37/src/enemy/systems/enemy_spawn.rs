@@ -6,8 +6,8 @@ use crate::{
     ai::SimpleMotion,
     combat::{damage::HurtBox, Health, Mana},
     configuration::{
-        assets::{Shadows, SpriteAssets, SpriteSheetLayouts},
-        spawn_shadow, GameCollisionLayer, CHARACTER_FEET_POS_OFFSET,
+        assets::{SpriteAssets, SpriteSheetLayouts},
+        GameCollisionLayer, CHARACTER_FEET_POS_OFFSET,
     },
     enemy::{systems::on_enemy_defeated, Enemy, EnemyAssets},
     items::{
@@ -20,7 +20,7 @@ use crate::{
 
 #[derive(Debug, Clone)]
 pub struct EnemySpawnData {
-    pub position: Vec2,
+    pub position: Vec3,
     pub enemy_type: EnemyType,
 }
 
@@ -55,7 +55,6 @@ pub fn spawn_enemies(
     enemy_assets: Res<EnemyAssets>,
     sprites: Res<SpriteAssets>,
     atlases: Res<SpriteSheetLayouts>,
-    shadows: Res<Shadows>,
 ) {
     for spawn_data in enemy_trigger.0.clone() {
         let enemy_name = spawn_data.enemy_type.name();
@@ -66,7 +65,6 @@ pub fn spawn_enemies(
             spawn_data,
             &sprites,
             &atlases,
-            &shadows,
         );
     }
 }
@@ -78,7 +76,6 @@ fn spawn_enemy(
     spawn_data: EnemySpawnData,
     sprites: &SpriteAssets,
     atlases: &SpriteSheetLayouts,
-    shadows: &Shadows,
 ) {
     if let Some(enemy_details) = enemy_assets.enemy_config.get(enemy_name) {
         let starting_items = [
@@ -97,7 +94,7 @@ fn spawn_enemy(
                 SimpleMotion::new(enemy_details.simple_motion_speed),
                 Health::new(enemy_details.health),
                 Mana::new(100.0, 10.0),
-                Transform::from_translation(spawn_data.position.extend(0.0)),
+                Transform::from_translation(spawn_data.position),
                 Sprite::from_atlas_image(
                     spawn_data.enemy_type.sprite(sprites),
                     TextureAtlas {
@@ -107,8 +104,6 @@ fn spawn_enemy(
                 ),
             ))
             .with_children(|spawner| {
-                spawn_shadow(spawner, &shadows, CHARACTER_FEET_POS_OFFSET - 4.0);
-
                 // collider to bump into stuff
                 spawner.spawn((
                     Transform::from_xyz(0.0, CHARACTER_FEET_POS_OFFSET, 0.0),

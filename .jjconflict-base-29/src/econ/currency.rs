@@ -9,16 +9,14 @@ use crate::{
 
 #[derive(Component)]
 #[require(
-    RigidBody,
+    RigidBody(|| RigidBody::Dynamic),
     Collider(|| Collider::circle(10.0)),
     CollisionLayers(|| CollisionLayers::new(
         [GameCollisionLayer::Grounded],
         [GameCollisionLayer::PlayerCollider, GameCollisionLayer::HighObstacle, GameCollisionLayer::LowObstacle]
     )),
     CollidingEntities,
-    LockedAxes(|| LockedAxes::new().lock_rotation()),
     LinearDamping(|| LinearDamping(2.0)),
-    TranslationExtrapolation,
     YSort
 )]
 pub struct Currency {
