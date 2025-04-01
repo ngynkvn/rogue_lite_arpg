@@ -104,17 +104,17 @@ pub fn update_equipment_transforms(
         let direction_transforms = EquipmentTransform::get(*direction);
 
         // Update mainhand equipment
-        if let Some(entity) = inventory.get_equipped(EquipmentSlot::Mainhand) {
-            if let Ok(mut transform) = transforms.get_mut(entity) {
-                *transform = direction_transforms.mainhand;
-            }
+        let equipped = inventory.get_equipped(EquipmentSlot::Mainhand);
+        let transform = equipped.and_then(|entity| transforms.get_mut(entity).ok());
+        if let Some(mut transform) = transform {
+            *transform = direction_transforms.mainhand;
         }
 
         // Update offhand equipment
-        if let Some(entity) = inventory.get_equipped(EquipmentSlot::Offhand) {
-            if let Ok(mut transform) = transforms.get_mut(entity) {
-                *transform = direction_transforms.offhand;
-            }
+        let equipped = inventory.get_equipped(EquipmentSlot::Offhand);
+        let transform = equipped.and_then(|entity| transforms.get_mut(entity).ok());
+        if let Some(mut transform) = transform {
+            *transform = direction_transforms.offhand;
         }
     }
 }

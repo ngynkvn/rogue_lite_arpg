@@ -81,8 +81,11 @@ pub fn animate_level_up(
         transform.rotate_z(LEVEL_UP_ROTATION_SPEED * duration.0.elapsed_secs());
 
         // Fade out
-        if let Some(material) = material.get_field_mut::<ColorMaterial>(0) {
-            material.color.set_alpha(1.0 - progress);
+        if let Some(color) = material
+            .get_field_mut::<ColorMaterial>(0)
+            .map(|m| &mut m.color)
+        {
+            color.set_alpha(1.0 - progress);
         }
     }
 

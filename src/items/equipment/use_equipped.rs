@@ -106,24 +106,27 @@ fn handle_equipment_activation(
         }
 
         // Check mana next
-        if let (Some(mana), Some(mana_cost)) = (holder_mana.as_mut(), mana_cost) {
-            if !mana.attempt_use_mana(mana_cost) {
-                warn!("Not enough mana!");
-                commands.trigger_targets(
-                    EquipmentUseFailedEvent {
-                        holder: entity,
-                        slot,
-                        reason: EquipmentUseFailure::OutOfMana,
-                    },
-                    entity,
-                );
+        match (holder_mana.as_mut(), mana_cost) {
+            (Some(mana), Some(mana_cost)) => {
+                if !mana.attempt_use_mana(mana_cost) {
+                    warn!("Not enough mana!");
+                    commands.trigger_targets(
+                        EquipmentUseFailedEvent {
+                            holder: entity,
+                            slot,
+                            reason: EquipmentUseFailure::OutOfMana,
+                        },
+                        entity,
+                    );
+                    return;
+                }
+            }
+            (None, Some(_)) => {
+                warn!("This wielder is not skilled in the arts of the arcane");
                 return;
             }
-        } else if holder_mana.is_none() && mana_cost.is_some() {
-            warn!("This wielder is not skilled in the arts of the arcane");
-            return;
+            _ => {}
         }
-
         // Success path - trigger equipment use and reset cooldown
         commands.trigger_targets(UseEquipmentEvent { holder: entity }, equipment_entity);
         equippable.use_rate.reset();

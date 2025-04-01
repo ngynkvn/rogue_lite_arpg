@@ -373,30 +373,26 @@ pub fn update_action_bar(
     inventory_query: Option<Single<&Inventory, (Changed<Inventory>, With<Player>)>>,
     item_query: Query<&Sprite, With<Item>>,
 ) {
-    if let Some(player_inventory_result) = inventory_query {
-        let player_inventory = player_inventory_result.into_inner();
+    let Some(player_inventory) = inventory_query else {
+        return;
+    };
 
-        for (action_box, children) in action_box_query.iter() {
-            if let Some(equipped_entity) = player_inventory.get_equipped(action_box.slot) {
-                if let Some(&image_entity) = children.first() {
-                    if let Ok(mut image_node) = image_query.get_mut(image_entity) {
-                        if let Ok(item_sprite) = item_query.get(equipped_entity) {
-                            let action_bar_sprite = get_action_bar_sprite(item_sprite);
-
-                            image_node.image = action_bar_sprite.image.clone();
-
-                            if let Some(atlas) = &action_bar_sprite.texture_atlas {
-                                image_node.texture_atlas = Some(TextureAtlas {
-                                    layout: atlas.layout.clone(),
-                                    index: atlas.index,
-                                });
-                            } else {
-                                image_node.texture_atlas = None;
-                            }
-                        }
-                    }
-                }
-            }
+    let children = action_box_query
+        .iter()
+        .filter_map(|(action_box, children)| {
+            let image_node = children.first();
+            image_node.and_then(|c| {
+                player_inventory
+                    .get_equipped(action_box.slot)
+                    .map(|ab| (ab, c))
+            })
+        });
+    for (equipped_entity, &child_entity) in children {
+        let image_node = image_query.get_mut(child_entity);
+        let item_sprite = item_query.get(equipped_entity).map(get_action_bar_sprite);
+        if let (Ok(mut image_node), Ok(action_bar_sprite)) = (image_node, item_sprite) {
+            image_node.image = action_bar_sprite.image.clone();
+            image_node.texture_atlas = action_bar_sprite.texture_atlas;
         }
     }
 }
