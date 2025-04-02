@@ -12,7 +12,8 @@ impl Plugin for AssetLoadingPlugin {
                 .continue_to_state(AppState::SpawnPlayer)
                 .load_collection::<SpriteAssets>()
                 .load_collection::<SpriteSheetLayouts>()
-                .load_collection::<GameIcons>(),
+                .load_collection::<GameIcons>()
+                .load_collection::<Shadows>(),
         );
     }
 }
@@ -39,21 +40,9 @@ pub struct SpriteSheetLayouts {
     ))]
     pub chest_layout: Handle<TextureAtlasLayout>,
     #[asset(texture_atlas_layout(tile_size_x = 100, tile_size_y = 100, columns = 10, rows = 1))]
-    pub tome_of_healing_effect: Handle<TextureAtlasLayout>,
-}
-
-#[derive(AssetCollection, Resource)]
-pub struct GameIcons {
-    #[asset(path = "icons/equip_marker.png")]
-    pub equip_icon: Handle<Image>,
-    #[asset(path = "icons/potion.png")]
-    pub potion_icon: Handle<Image>,
-    #[asset(path = "icons/spell-book.png")]
-    pub spell_book_icon: Handle<Image>,
-    #[asset(path = "icons/sword-brandish.png")]
-    pub melee_icon: Handle<Image>,
-    #[asset(path = "icons/wizard-staff.png")]
-    pub staff_icon: Handle<Image>,
+    pub spell_effect: Handle<TextureAtlasLayout>,
+    #[asset(texture_atlas_layout(tile_size_x = 32, tile_size_y = 32, columns = 4, rows = 1))]
+    pub shield_layout: Handle<TextureAtlasLayout>,
 }
 
 #[derive(AssetCollection, Resource)]
@@ -62,6 +51,10 @@ pub struct SpriteAssets {
     pub gold_coin: Handle<Image>,
     #[asset(path = "items/tome_of_healing.png")]
     pub tome_of_healing: Handle<Image>,
+    #[asset(path = "items/knight_shield.png")]
+    pub knight_shield: Handle<Image>,
+    #[asset(path = "items/magic_shield.png")]
+    pub magic_shield: Handle<Image>,
     #[asset(path = "items/sword.png")]
     pub sword: Handle<Image>,
     #[asset(path = "items/axe.png")]
@@ -95,7 +88,7 @@ pub struct SpriteAssets {
     #[asset(path = "chests.png")]
     pub chests_sprite_sheet: Handle<Image>,
     #[asset(path = "spells/tome_of_healing_effect.png")]
-    pub tome_of_healing_effect_sprite_sheet: Handle<Image>,
+    pub tome_of_healing_effect: Handle<Image>,
     #[asset(path = "player/player_sprite_sheet.png")]
     pub player_sprite_sheet: Handle<Image>,
     #[asset(path = "enemies/ice_mage_enemy.png")]
@@ -110,4 +103,52 @@ pub struct SpriteAssets {
     pub game_guide_sprite_sheet: Handle<Image>,
     #[asset(path = "npcs/stat_trainer.png")]
     pub stat_trainer_sprite_sheet: Handle<Image>,
+}
+
+#[derive(AssetCollection, Resource)]
+pub struct GameIcons {
+    #[asset(path = "icons/equip_marker.png")]
+    pub equip_icon: Handle<Image>,
+    #[asset(path = "icons/potion.png")]
+    pub potion_icon: Handle<Image>,
+    #[asset(path = "icons/spell-book.png")]
+    pub spell_book_icon: Handle<Image>,
+    #[asset(path = "icons/sword-brandish.png")]
+    pub melee_icon: Handle<Image>,
+    #[asset(path = "icons/wizard-staff.png")]
+    pub staff_icon: Handle<Image>,
+}
+
+#[derive(AssetCollection, Resource)]
+pub struct Shadows {
+    pub character_shadow: ShadowMesh<14, 6>,
+    pub shadow_color: ShadowColor,
+}
+
+pub struct ShadowMesh<const W: u16, const H: u16> {
+    pub handle: Handle<Mesh>,
+}
+
+impl<const W: u16, const H: u16> FromWorld for ShadowMesh<W, H> {
+    fn from_world(world: &mut World) -> Self {
+        let mut meshes = world.get_resource_mut::<Assets<Mesh>>().unwrap();
+        ShadowMesh {
+            handle: meshes.add(Ellipse {
+                half_size: Vec2::new(W as f32, H as f32),
+            }),
+        }
+    }
+}
+
+pub struct ShadowColor {
+    pub handle: Handle<ColorMaterial>,
+}
+
+impl FromWorld for ShadowColor {
+    fn from_world(world: &mut World) -> Self {
+        let mut colors = world.get_resource_mut::<Assets<ColorMaterial>>().unwrap();
+        ShadowColor {
+            handle: colors.add(Color::srgba(0.0, 0.0, 0.0, 0.6)),
+        }
+    }
 }

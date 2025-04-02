@@ -11,7 +11,7 @@ use crate::{
         inventory::Inventory,
         Item,
     },
-    player::{components::Player, PlayerExperience},
+    player::Player,
 };
 
 #[derive(Component)]
@@ -296,13 +296,11 @@ fn create_exp_bar(parent: &mut ChildBuilder) {
 }
 
 pub fn update_exp_bar(
-    player_exp: Option<Single<&PlayerExperience, (With<Player>, Changed<PlayerExperience>)>>,
+    player: Option<Single<&Player, Changed<Player>>>,
     mut exp_bar: Single<&mut Node, With<ExpBar>>,
 ) {
-    if let Some(player_exp) = player_exp {
-        let exp = player_exp.into_inner();
-        let progress = exp.current as f32 / exp.next_level_requirement as f32;
-        exp_bar.width = Val::Px(400.0 * progress);
+    if let Some(player) = player {
+        exp_bar.width = Val::Px(400.0 * player.get_progress_to_next_level());
     }
 }
 
@@ -375,19 +373,26 @@ pub fn update_action_bar(
     inventory_query: Option<Single<&Inventory, (Changed<Inventory>, With<Player>)>>,
     item_query: Query<&Sprite, With<Item>>,
 ) {
-    if let Some(player_inventory_result) = inventory_query {
-        let player_inventory = player_inventory_result.into_inner();
+    let Some(player_inventory) = inventory_query else {
+        return;
+    };
 
-        for (action_box, children) in action_box_query.iter() {
-            if let Some(equipped_entity) = player_inventory.get_equipped(action_box.slot) {
-                if let Some(&image_entity) = children.first() {
-                    if let Ok(mut image_node) = image_query.get_mut(image_entity) {
-                        if let Ok(item_sprite) = item_query.get(equipped_entity) {
-                            image_node.image = item_sprite.image.clone();
-                        }
-                    }
-                }
-            }
+    let children = action_box_query
+        .iter()
+        .filter_map(|(action_box, children)| {
+            let image_node = children.first();
+            image_node.and_then(|c| {
+                player_inventory
+                    .get_equipped(action_box.slot)
+                    .map(|ab| (ab, c))
+            })
+        });
+    for (equipped_entity, &child_entity) in children {
+        let image_node = image_query.get_mut(child_entity);
+        let item_sprite = item_query.get(equipped_entity).map(get_action_bar_sprite);
+        if let (Ok(mut image_node), Ok(action_bar_sprite)) = (image_node, item_sprite) {
+            image_node.image = action_bar_sprite.image.clone();
+            image_node.texture_atlas = action_bar_sprite.texture_atlas;
         }
     }
 }
@@ -474,5 +479,19 @@ pub fn update_cooldowns(
     for (mut line_node, cooldown_duration) in cooldown_query.iter_mut() {
         line_node.height =
             Val::Px(ACTION_BOX_INTERIOR_SIZE * cooldown_duration.0.fraction_remaining());
+    }
+}
+
+pub fn get_action_bar_sprite(sprite: &Sprite) -> Sprite {
+    match &sprite.texture_atlas {
+        Some(atlas) => Sprite {
+            image: sprite.image.clone(),
+            texture_atlas: Some(TextureAtlas {
+                layout: atlas.layout.clone(),
+                index: 0,
+            }),
+            ..sprite.clone()
+        },
+        None => sprite.clone(),
     }
 }
