@@ -63,24 +63,29 @@ impl Inventory {
     /// Performance: Equipping linearly searches inventory to find item by comparing entities
     /// Consider: Adding a reverse mapping entity_to_index: HashMap<Entity, usize> if we care about making this O(1)
     pub fn equip(&mut self, item: Entity, slot: EquipmentSlot) {
-        let mut item_entity = self.find_item_by_entity(item);
-        let index = item_entity.get_or_insert_with(|| {
-            self.add_item(item)
-                .expect("Why did you try to equip an item outside the inventory while said inventory was full you dummy")
-        });
-        self[slot].replace(*index);
+        let index = self.find_item_by_entity(item);
+
+        if index.is_none() {
+            let index = self.add_item(item).expect("Why did you try to equip an item outside the inventory while said inventory was full you dummy");
+            *self.get_equipped_slot_mut(slot) = Some(index);
+        } else {
+            *self.get_equipped_slot_mut(slot) = index;
+        }
     }
 
     /// Sets the specified equipment slot to None in inventory
     pub fn unequip(&mut self, item_entity: Entity, slot: EquipmentSlot) {
-        let equip_slot = self[slot];
-        if equip_slot.is_some_and(|index| item_entity == self.items[index]) {
-            self[slot].take();
+        if let Some(index) = self.get_equipped_slot(slot) {
+            // Only unequip if entity matches
+            if item_entity == self.items[index] {
+                self.get_equipped_slot_mut(slot).take();
+            }
         }
     }
 
     pub fn get_equipped(&self, slot: EquipmentSlot) -> Option<Entity> {
-        self[slot].and_then(|i| self.items.get(i).cloned())
+        self.get_equipped_slot(slot)
+            .and_then(|i| self.items.get(i).cloned())
     }
 
     pub fn add_coins(&mut self, amount: u32) {
@@ -88,9 +93,12 @@ impl Inventory {
     }
 
     pub fn remove_coins(&mut self, amount: u32) -> Result<u32, String> {
-        self.coins
-            .checked_sub(amount)
-            .ok_or("Not enough coins!".to_string())
+        if self.coins >= amount {
+            self.coins -= amount;
+            Ok(self.coins)
+        } else {
+            Err("Not enough coins!".to_string())
+        }
     }
 
     fn remove_item_by_index(&mut self, index_to_remove: usize) -> Result<Entity, String> {
@@ -105,16 +113,31 @@ impl Inventory {
     }
 
     fn adjust_slot_index(&mut self, slot: EquipmentSlot, index_to_remove: usize) {
-        use std::cmp::Ordering::{Equal, Greater, Less};
-        self[slot] = self[slot].and_then(|i| match i.cmp(&index_to_remove) {
-            Less => Some(i - 1),
-            Equal => None,
-            Greater => Some(i),
-        });
+        if let Some(slot_index) = self.get_equipped_slot(slot) {
+            *self.get_equipped_slot_mut(slot) = match index_to_remove.cmp(&slot_index) {
+                std::cmp::Ordering::Less => Some(slot_index - 1),
+                std::cmp::Ordering::Equal => None,
+                std::cmp::Ordering::Greater => Some(slot_index),
+            };
+        }
     }
 
     fn find_item_by_entity(&self, item: Entity) -> Option<usize> {
         self.items.iter().position(|&e| e == item)
+    }
+
+    fn get_equipped_slot_mut(&mut self, slot: EquipmentSlot) -> &mut Option<usize> {
+        match slot {
+            EquipmentSlot::Mainhand => &mut self.mainhand_index,
+            EquipmentSlot::Offhand => &mut self.offhand_index,
+        }
+    }
+
+    fn get_equipped_slot(&self, slot: EquipmentSlot) -> Option<usize> {
+        match slot {
+            EquipmentSlot::Mainhand => self.mainhand_index,
+            EquipmentSlot::Offhand => self.offhand_index,
+        }
     }
 }
 
@@ -171,23 +194,5 @@ impl InventoryBuilder {
             inventory.add_item(item).unwrap(); // Assuming all items can fit for now.  Handle errors as needed
         }
         inventory
-    }
-}
-impl std::ops::Index<EquipmentSlot> for Inventory {
-    type Output = Option<usize>;
-
-    fn index(&self, es: EquipmentSlot) -> &Self::Output {
-        match es {
-            EquipmentSlot::Mainhand => &self.mainhand_index,
-            EquipmentSlot::Offhand => &self.offhand_index,
-        }
-    }
-}
-impl std::ops::IndexMut<EquipmentSlot> for Inventory {
-    fn index_mut(&mut self, es: EquipmentSlot) -> &mut Self::Output {
-        match es {
-            EquipmentSlot::Mainhand => &mut self.mainhand_index,
-            EquipmentSlot::Offhand => &mut self.offhand_index,
-        }
     }
 }
