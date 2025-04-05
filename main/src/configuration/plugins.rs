@@ -20,11 +20,13 @@ use crate::{
     ui::plugin::UIPlugin,
 };
 
+use super::{configuration_data::ConfigurationData, game_data::GameDataPlugin};
+
 impl Plugin for GamePlugins {
     fn build(&self, app: &mut App) {
-        app
+        app.register_type::<ConfigurationData>()
             // Setup and configuration
-            .add_plugins((SetupPlugin, AnimationPlugin, SchedulePlugin))
+            .add_plugins((SetupPlugin, AnimationPlugin, SchedulePlugin, GameDataPlugin))
             // Third-party plugins
             .add_plugins((AssetLoadingPlugin, TilemapPlugin))
             // Core systems
@@ -37,13 +39,7 @@ impl Plugin for GamePlugins {
                 EquipmentPlugin,
             ))
             // Entity systems
-            .add_plugins((
-                MapPlugin,
-                LootablePlugin,
-                PlayerPlugin,
-                EnemyPlugin,
-                NPCPlugin,
-            ))
+            .add_plugins((MapPlugin, LootablePlugin, PlayerPlugin, EnemyPlugin, NPCPlugin))
             // UI
             .add_plugins(UIPlugin);
     }
@@ -68,10 +64,5 @@ pub struct NativePlugins;
 impl Plugin for NativePlugins {
     fn build(&self, app: &mut App) {
         app.add_plugins(GamePlugins); // Add native-only plugins
-        #[cfg(feature = "debug")]
-        {
-            use crate::debug::DebugPlugin;
-            app.add_plugins(DebugPlugin);
-        }
     }
 }
