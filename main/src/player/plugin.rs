@@ -11,7 +11,6 @@ use crate::{
 
 use super::{
     interact::{on_interaction_zone_added, on_player_interaction_input},
-    player_data::PlayerData,
     systems::death::finish_death_animation,
 };
 
@@ -19,9 +18,7 @@ pub struct PlayerPlugin;
 
 impl Plugin for PlayerPlugin {
     fn build(&self, app: &mut App) {
-        app.register_type::<PlayerData>()
-            .init_resource::<PlayerData>()
-            .add_event::<PlayerMovementEvent>()
+        app.add_event::<PlayerMovementEvent>()
             .add_systems(
                 OnEnter(AppState::SpawnPlayer),
                 (spawn_player, transition_to_create_hub).chain(),
@@ -41,9 +38,13 @@ impl Plugin for PlayerPlugin {
             .add_systems(
                 Update,
                 (
-                    (player_movement, update_player_aim_position, on_player_experience_change)
+                    (
+                        player_movement,
+                        update_player_aim_position,
+                        on_player_experience_change,
+                    )
                         .in_set(InGameSet::Simulation),
-                    animate_level_up.in_set(InGameSet::Vfx),
+                    (draw_cursor, animate_level_up).in_set(InGameSet::Vfx),
                 ),
             )
             .add_observer(handle_consume_event)
