@@ -11,7 +11,7 @@ use crate::{
     player::components::Player,
 };
 
-use super::assets::Shadows;
+use super::{assets::Shadows};
 
 pub const CHARACTER_FEET_POS_OFFSET: f32 = -24.0;
 
@@ -63,14 +63,13 @@ pub enum ZLayer {
     Ground,
     OnGround,
     InAir,
-
     SpriteBackground,
     BehindSprite,
     AboveSprite,
 }
 
 impl ZLayer {
-    pub fn z(&self) -> f32 {
+    pub const fn z(&self) -> f32 {
         match self {
             ZLayer::Ground => 0.0,
             ZLayer::OnGround => 5.0,
