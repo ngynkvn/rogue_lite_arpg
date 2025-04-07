@@ -5,7 +5,11 @@ use bevy::{
 use serde::Deserialize;
 
 use crate::{
-    ai::SimpleMotion, enemy::{EnemyAssets, Experience}, map::components::InstanceAssets, player::PlayerStats, progression::GameProgress
+    ai::SimpleMotion,
+    enemy::{EnemyAssets, Experience},
+    map::components::InstanceAssets,
+    player::PlayerStats,
+    progression::GameProgress,
 };
 
 pub struct PropertiesPlugin;
