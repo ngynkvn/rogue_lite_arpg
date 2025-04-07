@@ -1,5 +1,6 @@
 use proc_macro::TokenStream;
-use quote::{ToTokens, quote};
+use quote::{ToTokens, quote, quote_spanned};
+use ron;
 use syn::{DeriveInput, LitStr, parse_macro_input};
 
 #[proc_macro_derive(RonDefault, attributes(ron))]
@@ -14,29 +15,23 @@ pub fn default_ron(input: TokenStream) -> TokenStream {
         if attr.path().is_ident("ron") {
             let path_arg: LitStr = attr.parse_args().unwrap();
             let path = path_arg.value();
-            let root = env!("CARGO_MANIFEST_DIR");
-            let path = std::path::Path::new(root).join(path);
-            let data = match std::fs::read_to_string(path.clone()) {
-                Ok(contents) => contents,
-                Err(err) => {
-                    let path = path.to_string_lossy();
-                    let err = err.to_string();
-                    let cerr = format!("{} couldn't find ron file data at {}", path, err);
-                    return quote!(
-                        compile_error!(#cerr);
-                    )
-                    .into();
-                }
-            };
+            let root = std::env::var("CARGO_MANIFEST_DIR").unwrap();
+            let path = std::path::Path::new(&root).join(path);
+            if !path.exists() {
+                let path = path.to_string_lossy();
+                return quote_spanned! {path_arg.span() => compile_error!(format!("{} was not found.", #path))}.into();
+            }
+            let path = path.to_string_lossy();
+            let path = syn::LitStr::new(&path, path_arg.span());
             return quote!(
                 #[allow(non_upper_case_globals)]
                 static #default_val: std::sync::LazyLock<#name> = std::sync::LazyLock::new(|| {
-                    ron::de::from_str(#data).expect("wasn't able to initialize default value")
+                    ron::de::from_reader(std::fs::File::open(#path).unwrap()).unwrap()
                 });
                 #[allow(non_upper_case_globals)]
                 impl Default for #name {
                     fn default() -> Self {
-                        *#default_val
+                        #default_val.clone()
                     }
                 }
             )

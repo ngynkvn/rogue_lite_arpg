@@ -16,8 +16,10 @@ path = "src/main.rs"
 
 [dependencies]
 bevy = { version = "0.16.0-rc.2", features = ["dynamic_linking"] }
-bevy_ecs_tilemap = {git = "https://github.com/cpetzold/bevy_ecs_tilemap.git", branch = "bevy-0.16" }
-bevy_asset_loader = { git = "https://github.com/NiklasEi/bevy_asset_loader.git", features = ["2d"], branch = "bevy_main" }
+bevy_ecs_tilemap = { git = "https://github.com/cpetzold/bevy_ecs_tilemap.git", branch = "bevy-0.16" }
+bevy_asset_loader = { git = "https://github.com/NiklasEi/bevy_asset_loader.git", features = [
+  "2d",
+], branch = "bevy_main" }
 accesskit = "0.17"
 avian2d = { git = "https://github.com/Jondolf/avian.git", branch = "main" }
 rand = "0.8"
@@ -26,6 +28,8 @@ log = { version = "*", features = [
   "release_max_level_warn",
 ] }
 serde = "1.0.217"
+config_macros = { path = "crates/config_macros" }
+ron = "0.8.1"
 
 [target.wasm32-unknown-unknown.dependencies]
 wasm-bindgen = "0.2"

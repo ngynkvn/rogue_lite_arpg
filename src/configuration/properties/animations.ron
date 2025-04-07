@@ -1,0 +1,25 @@
+DefaultAnimationConfig(
+    sprite_size: UVec2(64, 64),
+    columns: 13,
+    rows: 21,
+    animations: {
+        (Idle,     Down):  AnimationData ( row: 14, frame_count: 3, frame_duration: 0.5,),
+        (Idle,     Up):    AnimationData ( row: 12, frame_count: 3, frame_duration: 0.5,),
+        (Idle,     Left):  AnimationData ( row: 13, frame_count: 3, frame_duration: 0.5,),
+        (Idle,     Right): AnimationData ( row: 15, frame_count: 3, frame_duration: 0.5,),
+        (Movement, Down):  AnimationData ( row: 10, frame_count: 9, frame_duration: 0.1,),
+        (Movement, Up):    AnimationData ( row: 8,  frame_count: 9, frame_duration: 0.1,),
+        (Movement, Left):  AnimationData ( row: 9,  frame_count: 9, frame_duration: 0.1,),
+        (Movement, Right): AnimationData ( row: 11, frame_count: 9, frame_duration: 0.1,),
+        //Literally less code to repeat this 4x than solve it in a proper way
+        //All four FacingDirections map to defeated down row / animation
+        (Defeated,  Down):  AnimationData ( row: 20, frame_count: 5, frame_duration: 0.4,),
+        (Defeated,  Left):  AnimationData ( row: 20, frame_count: 5, frame_duration: 0.4,),
+        (Defeated,  Right): AnimationData ( row: 20, frame_count: 5, frame_duration: 0.4,),
+        (Defeated,  Up):    AnimationData ( row: 20, frame_count: 5, frame_duration: 0.4,),
+        (Attacking, Up):    AnimationData ( row: 16, frame_count: 9, frame_duration: 0.1,),
+        (Attacking, Down):  AnimationData ( row: 18, frame_count: 9, frame_duration: 0.1,),
+        (Attacking, Left):  AnimationData ( row: 17, frame_count: 9, frame_duration: 0.1,),
+        (Attacking, Right): AnimationData ( row: 19, frame_count: 9, frame_duration: 0.1,),
+    }
+)

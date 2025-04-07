@@ -1,8 +1,9 @@
 use bevy::prelude::*;
+use serde::Deserialize;
 
 use crate::ai::SimpleMotion;
 
-#[derive(Component, Default, PartialEq, Debug, Hash, Eq, Copy, Clone)]
+#[derive(Component, Deserialize, Default, PartialEq, Debug, Hash, Eq, Copy, Clone)]
 #[require(FacingDirection, AimPosition)]
 pub enum ActionState {
     Attacking,
@@ -14,7 +15,7 @@ pub enum ActionState {
 }
 
 /// The direction a character faces and aims are not tied to each other in this game
-#[derive(Component, Default, Hash, PartialEq, Eq, Clone, Copy, Debug)]
+#[derive(Component, Deserialize, Default, Hash, PartialEq, Eq, Clone, Copy, Debug)]
 pub enum FacingDirection {
     Up,
     #[default]
