@@ -1,7 +1,5 @@
-error: $DIR/testdata/test.ro couldn't find ron file data at No such file or directory (os error 2)
- --> tests_macro/bad_path.rs:4:54
+error: unable to find file at $DIR/target/tests/trybuild/config_macros/testdata/test.ro
+ --> tests_macro/bad_path.rs:5:7
   |
-4 | #[derive(Debug, PartialEq, Deserialize, Copy, Clone, RonDefault)]
-  |                                                      ^^^^^^^^^^
-  |
-  = note: this error originates in the derive macro `RonDefault` (in Nightly builds, run with -Z macro-backtrace for more info)
+5 | #[ron("testdata/test.ro")]
+  |       ^^^^^^^^^^^^^^^^^^
