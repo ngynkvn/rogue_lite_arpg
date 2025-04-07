@@ -1,5 +1,5 @@
 error: expected string literal
- --> tests_macro/bad_arg.rs:5:7
+ --> tests_macro/bad_arg.rs:5:8
   |
-5 | #[ron(1)]
-  |       ^
+5 | #[lazy(1)]
+  |        ^

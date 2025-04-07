@@ -2,8 +2,13 @@ use config_macros::LazyRon;
 use serde::Deserialize;
 
 #[derive(Debug, PartialEq, Deserialize, Copy, Clone, LazyRon)]
+#[lazy("testdata/test.ron")]
 struct RonStruct {
-    count: usize,
+    wrongname: usize,
 }
 
-fn main() {}
+#[test]
+#[should_panic]
+fn main() {
+    RonStruct::default();
+}

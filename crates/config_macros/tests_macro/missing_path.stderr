@@ -1,4 +1,5 @@
-error: ron_path was not found, specify a file path using #[ron("your/data/here.ron")]
+error: ron path was not found.
+       specify a lazy path using #[lazy("your/data/here.ron")]
  --> tests_macro/missing_path.rs:5:8
   |
 5 | struct RonStruct {

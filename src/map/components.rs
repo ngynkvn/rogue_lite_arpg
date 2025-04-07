@@ -168,7 +168,7 @@ impl WorldSpaceConfig {
     }
 }
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Clone, Debug)]
 pub struct InstanceType {
     pub size_x_range: (f32, f32),
     pub size_y_range: (f32, f32),
@@ -179,7 +179,7 @@ pub struct InstanceType {
     pub floor_type: String,
 }
 
-#[derive(Deserialize, Resource)]
+#[derive(Deserialize, Clone, Resource)]
 pub struct InstanceAssets {
     pub instance_config: HashMap<String, InstanceType>,
 }

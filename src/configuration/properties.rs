@@ -1,96 +1,76 @@
+use std::sync::LazyLock;
+
 use bevy::{
     prelude::*,
     scene::ron::{self},
 };
-use config_macros::DefaultRon;
+use config_macros::LazyRon;
 use serde::Deserialize;
 
 use crate::{
     ai::SimpleMotion,
+    animation::DefaultAnimationConfig,
     enemy::{EnemyAssets, Experience},
     map::components::InstanceAssets,
-    player::PlayerStats,
+    player::{interact::InteractionZone, PlayerStats},
     progression::GameProgress,
 };
+
+#[derive(LazyRon, Clone, Deserialize)]
+#[lazy("src/configuration/properties/general.ron")]
+struct GeneralConfig(GameProgress, PlayerStats, Experience, SimpleMotion);
+
+static GENERAL_CONFIG: LazyLock<GeneralConfig> = std::sync::LazyLock::new(|| {
+    ron::de::from_bytes(include_bytes!("properties/general.ron")).unwrap()
+});
+static INSTANCE_ASSETS: LazyLock<InstanceAssets> = std::sync::LazyLock::new(|| {
+    ron::de::from_bytes(include_bytes!("properties/instances.ron")).unwrap()
+});
+static ENEMY_ASSETS: LazyLock<EnemyAssets> = std::sync::LazyLock::new(|| {
+    ron::de::from_bytes(include_bytes!("properties/enemies.ron")).unwrap()
+});
+static ANIMATION_CONFIG: LazyLock<DefaultAnimationConfig> = std::sync::LazyLock::new(|| {
+    ron::de::from_bytes(include_bytes!("properties/animations.ron")).unwrap()
+});
+
+impl InteractionZone {
+    pub const OPEN_CHEST: Self = Self::Square { length: 40.0 };
+    pub const NPC: Self = Self::Circle { radius: 30.0 };
+    pub const ITEM_PICKUP: Self = Self::Circle { radius: 25.0 };
+}
 
 pub struct PropertiesPlugin;
 
 impl Plugin for PropertiesPlugin {
     fn build(&self, app: &mut App) {
-        app.insert_ron::<InstanceAssets>(include_bytes!("properties/instances.ron"))
-            .insert_ron::<EnemyAssets>(include_bytes!("properties/enemies.ron"));
+        app.insert_resource::<InstanceAssets>(INSTANCE_ASSETS.clone())
+            .insert_resource::<EnemyAssets>(ENEMY_ASSETS.clone());
     }
 }
 
-#[derive(DefaultRon, Clone, Deserialize)]
-#[ron("src/configuration/properties/general.ron")]
-struct GeneralConfig(GameProgress, PlayerStats, Experience, SimpleMotion);
-
 impl Default for GameProgress {
     fn default() -> Self {
-        GeneralConfig__RON_DERIVED_DEFAULT__.0.clone()
+        GENERAL_CONFIG.0.clone()
     }
 }
 impl Default for PlayerStats {
     fn default() -> Self {
-        GeneralConfig__RON_DERIVED_DEFAULT__.1.clone()
+        GENERAL_CONFIG.1.clone()
     }
 }
 
 impl Default for Experience {
     fn default() -> Self {
-        GeneralConfig__RON_DERIVED_DEFAULT__.2.clone()
+        GENERAL_CONFIG.2.clone()
     }
 }
-
 impl Default for SimpleMotion {
     fn default() -> Self {
-        GeneralConfig__RON_DERIVED_DEFAULT__.3.clone()
+        GENERAL_CONFIG.3.clone()
     }
 }
-
-/// This trait is used to load properties from a RON file.
-/// The RON file is included in the binary using the `include_bytes!` macro.
-trait RonResourceExt {
-    fn insert_ron<'de, T>(&mut self, data: &'static [u8]) -> &mut Self
-    where
-        T: Deserialize<'de> + Resource;
-}
-impl RonResourceExt for App {
-    fn insert_ron<'de, T>(&mut self, data: &'static [u8]) -> &mut Self
-    where
-        T: Deserialize<'de> + Resource,
-    {
-        let data =
-            ron::de::from_bytes::<T>(data).expect("failed to load properties from provided path");
-        self.insert_resource(data);
-        self
-    }
-}
-
-// NOTE: Alternative way to load from RON is to have `impl RonData` for each struct
-// and use `ron::de::from_bytes::<T>(T::DATA)` instead of `include_bytes!`.
-#[allow(dead_code)]
-trait RonData {
-    #[allow(non_snake_case)]
-    const DATA: &'static [u8];
-}
-
-#[allow(dead_code)]
-trait InitRonResourceExt {
-    fn init_ron<'de, T>(&mut self) -> &mut Self
-    where
-        T: Deserialize<'de> + Resource + RonData;
-}
-
-impl InitRonResourceExt for App {
-    fn init_ron<'de, T>(&mut self) -> &mut Self
-    where
-        T: Deserialize<'de> + Resource + RonData,
-    {
-        let data = ron::de::from_bytes::<T>(T::DATA)
-            .expect("failed to load properties from provided path");
-        self.insert_resource(data);
-        self
+impl Default for DefaultAnimationConfig {
+    fn default() -> Self {
+        ANIMATION_CONFIG.clone()
     }
 }

@@ -1,5 +1,5 @@
-error: unable to find file at $DIR/target/tests/trybuild/config_macros/testdata/test.ro
- --> tests_macro/bad_path.rs:5:7
+error: unable to find ron file at $DIR/target/tests/trybuild/config_macros/testdata/test.ro
+ --> tests_macro/bad_path.rs:5:8
   |
-5 | #[ron("testdata/test.ro")]
-  |       ^^^^^^^^^^^^^^^^^^
+5 | #[lazy("testdata/test.ro")]
+  |        ^^^^^^^^^^^^^^^^^^

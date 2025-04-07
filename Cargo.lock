@@ -1675,6 +1675,7 @@ dependencies = [
 name = "config_macros"
 version = "0.1.0"
 dependencies = [
+ "proc-macro2",
  "quote",
  "ron 0.9.0",
  "serde",

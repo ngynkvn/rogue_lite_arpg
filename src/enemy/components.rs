@@ -15,7 +15,7 @@ pub struct Experience {
     pub base_exp: f32,
 }
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Clone, Debug)]
 pub struct EnemyDetails {
     pub simple_motion_speed: f32,
     pub health: f32,
@@ -24,7 +24,7 @@ pub struct EnemyDetails {
     pub weapon: String,
 }
 
-#[derive(Deserialize, Resource)]
+#[derive(Deserialize, Clone, Resource)]
 pub struct EnemyAssets {
     pub enemy_config: HashMap<String, EnemyDetails>,
 }

@@ -1,8 +1,8 @@
-use config_macros::DefaultRon;
+use config_macros::LazyRon;
 use serde::Deserialize;
 
-#[derive(Deserialize, Copy, Clone, DefaultRon)]
-#[ron("../../../../testdata/test.ron")]
+#[derive(Deserialize, Copy, Clone, LazyRon)]
+#[lazy("../../../../testdata/test.ron")]
 struct Rons {
     count: usize,
 }
