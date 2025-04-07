@@ -1,9 +1,29 @@
 GeneralConfig(
+    GameProgress (
+        game_completed_counter: 0,
+        death_counter: 0,
+        total_career_level: 0,
+        progress_points: 5,
+        base_stats: PlayerStats(
+            agility: 1,
+            strength: 1,
+            dexterity: 1,
+            intellect: 1,
+            luck: 99,
+        ),
+    ),
     PlayerStats(
         agility: 1,
         strength: 1,
         dexterity: 1,
         intellect: 1,
         luck: 99,
-  )
+    ),
+    Experience(base_exp: 10.0),
+    SimpleMotion(
+        max_speed: 10.0,
+        current_speed: 0.0,
+        direction: Vec2(0, 0),
+        slowed_percentage: 0.0,
+    )
 )

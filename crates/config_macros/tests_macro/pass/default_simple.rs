@@ -1,7 +1,7 @@
-use config_macros::RonDefault;
+use config_macros::DefaultRon;
 use serde::Deserialize;
 
-#[derive(Deserialize, Copy, Clone, RonDefault)]
+#[derive(Deserialize, Copy, Clone, DefaultRon)]
 #[ron("../../../../testdata/test.ron")]
 struct Rons {
     count: usize,

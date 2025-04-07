@@ -2,6 +2,7 @@ use bevy::{
     prelude::*,
     scene::ron::{self},
 };
+use config_macros::DefaultRon;
 use serde::Deserialize;
 
 use crate::{
@@ -21,39 +22,30 @@ impl Plugin for PropertiesPlugin {
     }
 }
 
+#[derive(DefaultRon, Clone, Deserialize)]
+#[ron("src/configuration/properties/general.ron")]
+struct GeneralConfig(GameProgress, PlayerStats, Experience, SimpleMotion);
+
 impl Default for GameProgress {
     fn default() -> Self {
-        GameProgress {
-            game_completed_counter: 0,
-            death_counter: 0,
-            total_career_level: 0,
-            progress_points: 5,
-            base_stats: PlayerStats::default(),
-        }
+        GeneralConfig__RON_DERIVED_DEFAULT__.0.clone()
     }
 }
-
 impl Default for PlayerStats {
     fn default() -> Self {
-        PlayerStats {
-            agility: 1,
-            strength: 1,
-            dexterity: 1,
-            intellect: 1,
-            luck: 99,
-        }
+        GeneralConfig__RON_DERIVED_DEFAULT__.1.clone()
     }
 }
 
 impl Default for Experience {
     fn default() -> Self {
-        Experience { base_exp: 10.0 }
+        GeneralConfig__RON_DERIVED_DEFAULT__.2.clone()
     }
 }
 
 impl Default for SimpleMotion {
     fn default() -> Self {
-        SimpleMotion::new(10.0)
+        GeneralConfig__RON_DERIVED_DEFAULT__.3.clone()
     }
 }
 

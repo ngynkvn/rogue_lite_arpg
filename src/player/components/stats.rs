@@ -1,6 +1,7 @@
 use bevy::prelude::*;
+use serde::Deserialize;
 
-#[derive(Component, Clone)]
+#[derive(Component, Deserialize, Clone)]
 pub struct PlayerStats {
     pub agility: u32,   //Movement speed, roll range
     pub strength: u32,  //Melee swing damage

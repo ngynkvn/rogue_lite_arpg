@@ -1,4 +1,5 @@
 use bevy::{platform_support::collections::HashMap, prelude::*};
+use config_macros::DefaultRon;
 use serde::Deserialize;
 
 use crate::ai::state::{ActionState, FacingDirection};
@@ -31,8 +32,7 @@ impl Default for AnimationIndices {
 #[require(AnimationIndices)]
 pub struct AnimationTimer(pub Timer);
 
-use config_macros::RonDefault;
-#[derive(Resource, Clone, Deserialize, RonDefault)]
+#[derive(Resource, Clone, Deserialize, DefaultRon)]
 #[ron("src/configuration/properties/animations.ron")]
 pub struct DefaultAnimationConfig {
     pub sprite_size: UVec2,

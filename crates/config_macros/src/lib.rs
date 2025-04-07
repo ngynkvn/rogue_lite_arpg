@@ -4,8 +4,8 @@ use quote::{ToTokens, quote, quote_spanned};
 use ron as johns_surf_shop;
 use syn::{DeriveInput, LitStr, parse_macro_input};
 
-#[proc_macro_derive(RonDefault, attributes(ron))]
-pub fn default_ron(input: TokenStream) -> TokenStream {
+#[proc_macro_derive(DefaultRon, attributes(ron))]
+pub fn impl_ron_default_ron(input: TokenStream) -> TokenStream {
     // Parse the input tokens into a syntax tree
     let input = parse_macro_input!(input as DeriveInput);
 
@@ -14,15 +14,21 @@ pub fn default_ron(input: TokenStream) -> TokenStream {
     let default_val = syn::Ident::new(&dname, name.span());
     for attr in &input.attrs {
         if attr.path().is_ident("ron") {
-            let path_arg: LitStr = attr.parse_args().unwrap();
+            let path_arg: LitStr = match attr.parse_args() {
+                Ok(path_arg) => path_arg,
+                Err(e) => {
+                    return e.to_compile_error().into();
+                }
+            };
             let path = path_arg.value();
             let root = std::env::var("CARGO_MANIFEST_DIR").unwrap();
             let path = std::path::Path::new(&root).join(path);
             if !path.exists() {
-                let path = syn::LitStr::new(&path.to_string_lossy(), path_arg.span());
-                return quote_spanned! {path.span() =>
-                    compile_error!(concat!("unable to find file at ", #path));
-                }
+                return syn::Error::new(
+                    path_arg.span(),
+                    format!("unable to find file at {}", path.to_string_lossy()),
+                )
+                .into_compile_error()
                 .into();
             }
             let path = path.to_string_lossy();
@@ -30,16 +36,16 @@ pub fn default_ron(input: TokenStream) -> TokenStream {
             return quote!(
                 #[allow(non_upper_case_globals)]
                 static #default_val: std::sync::LazyLock<#name> = std::sync::LazyLock::new(|| {
-                    ron::de::from_reader(std::fs::File::open(#path).unwrap()).unwrap()
+                    match ron::de::from_reader(std::fs::File::open(#path).unwrap()) {
+                        Ok(value) => value,
+                        Err(err) => panic!(
+                            "encountered an error trying to parse {}\npath: {}\nerr: {}",
+                            std::any::type_name::<#name>(), #path, err)
+                    }
                 });
                 impl Default for #name {
                     fn default() -> Self {
-                        // TODO: remove
-                        let struct_name = #dname;
-                        let start = std::time::Instant::now();
-                        let value = #default_val.clone();
-                        println!("clone for {} took {:?}", struct_name, start.elapsed());
-                        value
+                        #default_val.clone()
                     }
                 }
             )

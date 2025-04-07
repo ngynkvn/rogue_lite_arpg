@@ -1,0 +1,5 @@
+Player(
+    current_level: 1,
+    current_experience: 0.0,
+    next_level_experience_req: 20.0,
+)

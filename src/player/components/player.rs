@@ -1,5 +1,7 @@
 use avian2d::prelude::Mass;
 use bevy::prelude::*;
+use config_macros::DefaultRon;
+use serde::Deserialize;
 
 use crate::{
     ai::SimpleMotion,
@@ -19,6 +21,8 @@ const PLAYER_LEVEL_REQUIREMENT_MULTIPLIER: f32 = 2.0;
     Mass(100.0),
     IFrames,
 )]
+#[derive(Deserialize, Clone, DefaultRon)]
+#[ron("src/configuration/properties/player.ron")]
 pub struct Player {
     current_level: u32,
     // Outside systems may give the player experience, like when an enemy dies
@@ -26,15 +30,15 @@ pub struct Player {
     next_level_experience_req: f32,
 }
 
-impl Default for Player {
-    fn default() -> Self {
-        Player {
-            current_level: 1,
-            current_experience: 0.0,
-            next_level_experience_req: 20.0,
-        }
-    }
-}
+// impl Default for Player {
+//     fn default() -> Self {
+//         Player {
+//             current_level: 1,
+//             current_experience: 0.0,
+//             next_level_experience_req: 20.0,
+//         }
+//     }
+// }
 
 impl Player {
     /// Attempts to increase player level based on current experience and level requirement, and then

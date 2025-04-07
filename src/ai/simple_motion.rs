@@ -1,11 +1,12 @@
 use avian2d::prelude::LinearVelocity;
 use bevy::prelude::*;
+use serde::Deserialize;
 
 use crate::ai::state::FacingDirection;
 
 /// Simple motion has no acceleration and assumes all entities move at max speed unless altered by slowed_percentage
 /// by Movement
-#[derive(Component)]
+#[derive(Component, Deserialize, Clone)]
 #[require(FacingDirection)]
 pub struct SimpleMotion {
     pub direction: Vec2,

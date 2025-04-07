@@ -10,7 +10,7 @@ use crate::character::Character;
 pub struct Enemy;
 
 //Experience granted by the enemy when player defeats it
-#[derive(Component)]
+#[derive(Component, Deserialize, Clone)]
 pub struct Experience {
     pub base_exp: f32,
 }

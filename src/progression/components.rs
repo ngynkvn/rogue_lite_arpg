@@ -1,8 +1,9 @@
 use bevy::prelude::*;
+use serde::Deserialize;
 
 use crate::player::PlayerStats;
 
-#[derive(Resource)]
+#[derive(Resource, Deserialize, Clone)]
 pub struct GameProgress {
     pub game_completed_counter: u32,
     pub death_counter: u32,
